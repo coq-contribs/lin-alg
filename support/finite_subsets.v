@@ -1,5 +1,6 @@
 (** %\subsection*{ support :  finite\_subsets.v }%*)
 Set Implicit Arguments.
+Unset Strict Implicit.
 Require Export Diff.
 Require Export Singleton.
 Require Export cast_between_subsets.
@@ -10,239 +11,254 @@ Require Export Classical_Prop.
 
  %\label{isfiniteset}% *)
 
-Definition is_finite_set [A:Setoid]
-  := (EXT n:Nat | (EXT v:(seq n A) | (full A)='(seq_set v))).
+Definition is_finite_set (A : Setoid) :=
+  exists n : Nat, (exists v : seq n A, full A =' seq_set v in _).
 
 (** - For subsets, the following notion is more useful as it removes one
    one layer of taking subsets: *)
-Definition is_finite_subset [A:Setoid;B:(part_set A)]
-  := (EXT n:Nat | (EXT v:(seq n A) | B='(seq_set v))).
+Definition is_finite_subset (A : Setoid) (B : part_set A) :=
+  exists n : Nat, (exists v : seq n A, B =' seq_set v in _).
 
 
-Lemma is_finite_subset_comp : (A:Setoid;B,C:(part_set A))
-  B='C -> (is_finite_subset B)->(is_finite_subset C).
-Red.
-Intros.
-Red in H0.
-Inversion H0.
-Inversion H1.
-Exists x.
-Exists x0.
-(Apply Trans with B;Auto with algebra).
+Lemma is_finite_subset_comp :
+ forall (A : Setoid) (B C : part_set A),
+ B =' C in _ -> is_finite_subset B -> is_finite_subset C.
+red in |- *.
+intros.
+red in H0.
+inversion H0.
+inversion H1.
+exists x.
+exists x0.
+apply Trans with B; auto with algebra.
 Qed.
 
 (** - There is no corresponding is_finite_set_comp, for there is no 'master' setoid 
  wherein two Setoids can be compared. *)
 
-Hints Resolve is_finite_subset_comp : algebra.
+Hint Resolve is_finite_subset_comp: algebra.
 
 
-Lemma is_finite_subset_then_is_finite : (A:Setoid;B:(part_set A))
-  (is_finite_subset B) -> (is_finite_set B).
-Intros.
-Red; Red in H.
-Inversion_clear H;Inversion_clear H0.
-Exists x.
-Assert (i:(fin x))(in_part (x0 i) B).
-Simpl in H;Red in H;Simpl in H.
-Intros.
-Elim (H (x0 i)).
-Intros p q;(Apply q;Auto with algebra).
-Exists i;Auto with algebra.
-Exists (cast_map_to_subset H0).
-Simpl;Red;Simpl;Split;Intro;Auto.
-Unfold subtype_image_equal.
-Simpl in H;Red in H;Simpl in H.
-Elim (H (subtype_elt x1)).
-Intros.
-Assert (in_part (subtype_elt x1) B).
-Auto with algebra.
-Elim (H2 H4).
-Intros.
-Exists x2.
-(Apply Trans with (x0 x2);Auto with algebra).
+Lemma is_finite_subset_then_is_finite :
+ forall (A : Setoid) (B : part_set A), is_finite_subset B -> is_finite_set B.
+intros.
+red in |- *; red in H.
+inversion_clear H; inversion_clear H0.
+exists x.
+assert (forall i : fin x, in_part (x0 i) B).
+simpl in H; red in H; simpl in H.
+intros.
+elim (H (x0 i)).
+intros p q; (apply q; auto with algebra).
+exists i; auto with algebra.
+exists (cast_map_to_subset H0).
+simpl in |- *; red in |- *; simpl in |- *; split; intro; auto.
+unfold subtype_image_equal in |- *.
+simpl in H; red in H; simpl in H.
+elim (H (subtype_elt x1)).
+intros.
+assert (in_part (subtype_elt x1) B).
+auto with algebra.
+elim (H2 H4).
+intros.
+exists x2.
+apply Trans with (x0 x2); auto with algebra.
 Qed.
 
-Lemma is_finite_set_then_is_finite_subset : (A:Setoid;B:(part_set A))
-  (is_finite_set B) -> (is_finite_subset B).
-Intros;Red;Red in H.
-Inversion_clear H;Inversion_clear H0.
-Exists x;Exists (Map_embed x0).
-NewDestruct x0;Simpl in H;Red in H;Simpl in H;Simpl;Red;Simpl.
-Split;Intros.
-Red in H0;Elim (H (Build_subtype H0)).
-Intros p _;Generalize (p I);Clear p; Intro.
-Inversion_clear H1.
-Red in H2.
-Exists x1.
-Simpl in H2.
-Auto.
-Inversion_clear H0.
-(Apply in_part_comp_l with (subtype_elt (Ap x1));Auto with algebra).
+Lemma is_finite_set_then_is_finite_subset :
+ forall (A : Setoid) (B : part_set A), is_finite_set B -> is_finite_subset B.
+intros; red in |- *; red in H.
+inversion_clear H; inversion_clear H0.
+exists x; exists (Map_embed x0).
+destruct x0; simpl in H; red in H; simpl in H; simpl in |- *; red in |- *;
+ simpl in |- *.
+split; intros.
+red in H0; elim (H (Build_subtype H0)).
+intros p _; generalize (p I); clear p; intro.
+inversion_clear H1.
+red in H2.
+exists x1.
+simpl in H2.
+auto.
+inversion_clear H0.
+apply in_part_comp_l with (subtype_elt (Ap x1)); auto with algebra.
 Qed.
 
-Lemma seq_set_is_finite_subset : (A:Setoid;n:Nat;v:(seq n A))
-  (is_finite_subset (seq_set v)).
-Intros.
-Red.
-Exists n.
-Exists v.
-Auto with algebra.
+Lemma seq_set_is_finite_subset :
+ forall (A : Setoid) (n : Nat) (v : seq n A), is_finite_subset (seq_set v).
+intros.
+red in |- *.
+exists n.
+exists v.
+auto with algebra.
 Qed.
 
 (** - This one is surprisingly hard to prove (or did I not think hard enough?) *)
 
-Lemma included_reflects_is_finite_subset : (A:Setoid;B,C:(part_set A))
- (is_finite_subset C) -> (included B C) -> (is_finite_subset B).
-Intros.
-Red in H.
-Inversion_clear H.
-Generalize B C H0 H1.
-Clear  H1 H0 C B.
-Induction x.
-Intros.
-Inversion_clear H1.
-Assert C='(empty A).
-(Apply Trans with (seq_set x);Auto with algebra).
-Clear H x.
-Assert (included B (empty A)).
-(Apply included_comp with B C;Auto with algebra).
-Red in H.
-Red.
-Exists O;Exists (empty_seq A).
-(Apply Trans with (empty A);Auto with algebra).
-Split.
-Intro;Auto.
-Intro p;Simpl in p;Contradiction.
+Lemma included_reflects_is_finite_subset :
+ forall (A : Setoid) (B C : part_set A),
+ is_finite_subset C -> included B C -> is_finite_subset B.
+intros.
+red in H.
+inversion_clear H.
+generalize B C H0 H1.
+clear H1 H0 C B.
+induction  x as [| x Hrecx].
+intros.
+inversion_clear H1.
+assert (C =' empty A in _).
+apply Trans with (seq_set x); auto with algebra.
+clear H x.
+assert (included B (empty A)).
+apply included_comp with B C; auto with algebra.
+red in H.
+red in |- *.
+exists 0; exists (empty_seq A).
+apply Trans with (empty A); auto with algebra.
+split.
+intro; auto.
+intro p; simpl in p; contradiction.
 
-Intros.
-Inversion_clear H1.
-Assert (in_part (head x0) B)\/~(in_part (head x0) B);Try Apply classic.
-Inversion_clear H1.
-Assert (included (diff B (single (head x0))) (seq_set (Seqtl x0))).
-Red.
-Intros.
-Simpl in H1.
-Inversion_clear H1.
-Red in H0.
-Generalize (H0 x1 H3).
-Intro.
-Assert (in_part x1 (seq_set x0)).
-(Apply in_part_comp_r with C;Auto with algebra).
-Simpl in H5.
-Inversion_clear H5.
-Assert ~x2='(Build_finiteT (lt_O_Sn x)) in (fin (S x)).
-Unfold head in H4.
-Red;Red in H4;Intro;Apply H4.
-(Apply Trans with (x0 x2);Auto with algebra).
-Assert (EXT i:(fin x) | x2 =' (Cases i of (Build_finiteT n Hn) => (Build_finiteT (lt_n_S??Hn)) end) in (fin (S x))).
-Clear H6 H1 H4 H3 x1 H2 H x0 H0 C B Hrecx A.
-NewDestruct x2.
-Simpl in H5.
-Simpl.
-Assert (EXT n:Nat | index=(S n)).
-NewDestruct index.
-Absurd O=O;Auto.
-Exists n.
-Auto.
-Inversion_clear H.
-Rewrite H0 in in_range_prf.
-Exists (Build_finiteT (lt_S_n??in_range_prf)).
-Simpl.
-Auto.
-Inversion_clear H7.
-NewDestruct x3.
-(Apply in_part_comp_l with (x0 (Build_finiteT (lt_n_S??in_range_prf)));Auto with algebra).
-Simpl.
-Exists (Build_finiteT in_range_prf).
-Auto with algebra.
-(Apply Trans with (x0 x2);Auto with algebra).
+intros.
+inversion_clear H1.
+assert (in_part (head x0) B \/ ~ in_part (head x0) B); try apply classic.
+inversion_clear H1.
+assert (included (diff B (single (head x0))) (seq_set (Seqtl x0))).
+red in |- *.
+intros.
+simpl in H1.
+inversion_clear H1.
+red in H0.
+generalize (H0 x1 H3).
+intro.
+assert (in_part x1 (seq_set x0)).
+apply in_part_comp_r with C; auto with algebra.
+simpl in H5.
+inversion_clear H5.
+assert (~ x2 =' Build_finiteT (lt_O_Sn x) in fin (S x)).
+unfold head in H4.
+red in |- *; red in H4; intro; apply H4.
+apply Trans with (x0 x2); auto with algebra.
+assert
+ (exists i : fin x,
+    x2 ='
+    match i with
+    | Build_finiteT n Hn => Build_finiteT (lt_n_S _ _ Hn)
+    end in fin (S x)).
+clear H6 H1 H4 H3 x1 H2 H x0 H0 C B Hrecx A.
+destruct x2.
+simpl in H5.
+simpl in |- *.
+assert (exists n : Nat, index = S n).
+destruct index as [| n].
+absurd (0 = 0); auto.
+exists n.
+auto.
+inversion_clear H.
+rewrite H0 in in_range_prf.
+exists (Build_finiteT (lt_S_n _ _ in_range_prf)).
+simpl in |- *.
+auto.
+inversion_clear H7.
+destruct x3.
+apply in_part_comp_l with (x0 (Build_finiteT (lt_n_S _ _ in_range_prf)));
+ auto with algebra.
+simpl in |- *.
+exists (Build_finiteT in_range_prf).
+auto with algebra.
+apply Trans with (x0 x2); auto with algebra.
 
-Generalize (Hrecx??H1).
-Intros.
-Assert (EXT v:(seq x A) | (seq_set (Seqtl x0)) =' (seq_set v)).
-Exists (Seqtl x0).
-Auto with algebra.
-Generalize (H3 H4);Clear H4 H3;Intros.
-Red in H3.
-Inversion_clear H3.
-Inversion_clear H4.
-Red.
-Exists (S x1).
-Exists (head x0);;x2.
-Assert (x:A)(in_part x B)->(x='(head x0)\/(in_part x (diff B (single (head x0))))).
-Simpl.
-Intros.
-Case (classic x3='(head x0));Intro.
-Left;Auto.
-Right;Auto.
-Simpl.
-Red.
-Intros.
-Split.
-Intro.
-Generalize (H4 x3 H5);Clear H4;Intros.
-Simpl.
-Case H4;Clear H4;Intros.
-Exists (Build_finiteT (lt_O_Sn x1)).
-Auto.
-Simpl in H3;Red in H3.
-Generalize (H3 x3);Clear H3;Intros.
-Inversion_clear H3.
-Generalize (H6 H4);Clear H6;Intros.
-Simpl in H3.
-Inversion_clear H3.
-NewDestruct x4.
-Exists (Build_finiteT (lt_n_S??in_range_prf)).
-(Apply Trans with (x2 (Build_finiteT in_range_prf));Auto with algebra). 
-Intros.
-Simpl in H5.
-Inversion_clear H5.
-NewDestruct x4.
-NewDestruct index.
-(Apply in_part_comp_l with (head x0);Auto with algebra).
-Assert (included (diff B (single (head x0))) B).
-Red.
-Intros.
-Simpl in H5.
-Inversion_clear H5;Auto.
-Red in H5.
-(Apply H5;Auto with algebra).
-(Apply in_part_comp_r with (seq_set x2);Auto with algebra).
-Simpl.
-Exists (Build_finiteT (lt_S_n n x1 in_range_prf)).
-Auto.
+generalize (Hrecx _ _ H1).
+intros.
+assert (exists v : seq x A, seq_set (Seqtl x0) =' seq_set v in _).
+exists (Seqtl x0).
+auto with algebra.
+generalize (H3 H4); clear H4 H3; intros.
+red in H3.
+inversion_clear H3.
+inversion_clear H4.
+red in |- *.
+exists (S x1).
+exists (head x0;; x2).
+assert
+ (forall x : A,
+  in_part x B -> x =' head x0 in _ \/ in_part x (diff B (single (head x0)))).
+simpl in |- *.
+intros.
+case (classic (x3 =' head x0 in _)); intro.
+left; auto.
+right; auto.
+simpl in |- *.
+red in |- *.
+intros.
+split.
+intro.
+generalize (H4 x3 H5); clear H4; intros.
+simpl in |- *.
+case H4; clear H4; intros.
+exists (Build_finiteT (lt_O_Sn x1)).
+auto.
+simpl in H3; red in H3.
+generalize (H3 x3); clear H3; intros.
+inversion_clear H3.
+generalize (H6 H4); clear H6; intros.
+simpl in H3.
+inversion_clear H3.
+destruct x4.
+exists (Build_finiteT (lt_n_S _ _ in_range_prf)).
+apply Trans with (x2 (Build_finiteT in_range_prf)); auto with algebra. 
+intros.
+simpl in H5.
+inversion_clear H5.
+destruct x4.
+destruct index as [| n].
+apply in_part_comp_l with (head x0); auto with algebra.
+assert (included (diff B (single (head x0))) B).
+red in |- *.
+intros.
+simpl in H5.
+inversion_clear H5; auto.
+red in H5.
+apply H5; auto with algebra.
+apply in_part_comp_r with (seq_set x2); auto with algebra.
+simpl in |- *.
+exists (Build_finiteT (lt_S_n n x1 in_range_prf)).
+auto.
 
-Assert (included B (seq_set (Seqtl x0))).
-Red.
-Intros.
-Red in H0.
-Generalize (H0 ? H1).
-Intro.
-Assert (in_part x1 (seq_set x0)).
-(Apply in_part_comp_r with C;Auto with algebra).
-Clear H3;Simpl in H4.
-Inversion_clear H4.
-Assert ~x2='(Build_finiteT (lt_O_Sn x))in(fin (S x)).
-Red;Red in H2;Intro;Apply H2.
-(Apply in_part_comp_l with x1;Auto with algebra).
-(Apply Trans with (x0 x2);Auto with algebra).
-Simpl.
-Assert (EXT i:(fin x) | x2 =' (Cases i of (Build_finiteT n Hn) => (Build_finiteT (lt_n_S??Hn)) end) in (fin (S x))).
-NewDestruct x2.
-NewDestruct index.
-Simpl in H4.
-Absurd O=O;Auto.
-Clear H4.
-Exists (Build_finiteT (lt_S_n??in_range_prf)).
-Simpl.
-Auto.
-Inversion_clear H5.
-Exists x3.
-NewDestruct x3.
-(Apply Trans with (x0 x2);Auto with algebra).
-(Apply (Hrecx??H1);Auto with algebra).
-Exists (Seqtl x0);Auto with algebra.
+assert (included B (seq_set (Seqtl x0))).
+red in |- *.
+intros.
+red in H0.
+generalize (H0 _ H1).
+intro.
+assert (in_part x1 (seq_set x0)).
+apply in_part_comp_r with C; auto with algebra.
+clear H3; simpl in H4.
+inversion_clear H4.
+assert (~ x2 =' Build_finiteT (lt_O_Sn x) in fin (S x)).
+red in |- *; red in H2; intro; apply H2.
+apply in_part_comp_l with x1; auto with algebra.
+apply Trans with (x0 x2); auto with algebra.
+simpl in |- *.
+assert
+ (exists i : fin x,
+    x2 ='
+    match i with
+    | Build_finiteT n Hn => Build_finiteT (lt_n_S _ _ Hn)
+    end in fin (S x)).
+destruct x2.
+destruct index as [| n].
+simpl in H4.
+absurd (0 = 0); auto.
+clear H4.
+exists (Build_finiteT (lt_S_n _ _ in_range_prf)).
+simpl in |- *.
+auto.
+inversion_clear H5.
+exists x3.
+destruct x3.
+apply Trans with (x0 x2); auto with algebra.
+apply (Hrecx _ _ H1); auto with algebra.
+exists (Seqtl x0); auto with algebra.
 Qed.
-
 

@@ -1,5 +1,6 @@
 (** %\subsection*{ support :  counting\_elements.v }%*)
 Set Implicit Arguments.
+Unset Strict Implicit.
 Require Export Diff.
 Require Export Singleton.
 Require Export has_n_elements.
@@ -21,7 +22,8 @@ Definition has_at_least_n_elements := ]
 
  %\label{hasatleastnelements}% *)
 
-Definition has_at_least_n_elements := [n:Nat;A:Setoid](EXT v:(seq n A) | (distinct v)).
+Definition has_at_least_n_elements (n : Nat) (A : Setoid) :=
+  exists v : seq n A, distinct v.
 
 (** - Note that, contrarily, we may not just drop the other requirement to obtain 
 
@@ -32,812 +34,869 @@ Definition has_at_least_n_elements := [n:Nat;A:Setoid](EXT v:(seq n A) | (distin
  but with this definition we'd need to exhibit an n-length sequence, which we can't do
  for $n>0$.*)
 
-Definition has_at_most_n_elements := [n:Nat;A:Setoid](EXT m:nat | (le m n)/\(has_n_elements m A)).
+Definition has_at_most_n_elements (n : Nat) (A : Setoid) :=
+  exists m : nat, m <= n /\ has_n_elements m A.
 
-Lemma has_at_most_n_elements_comp : (A:Setoid;n,m:Nat;B,C:(part_set A))
-  (has_at_most_n_elements n B) -> B='C -> n='m -> (has_at_most_n_elements m C).
-Intros.
-Red.
-Red in H.
-Inversion_clear H.
-Rename x into Bsize.
-Inversion_clear H2.
-Exists Bsize.
-Split.
-Generalize (eq_ind ?? [n](le Bsize n) H ? H1).
-Auto.
-(Apply has_n_elements_comp with Bsize B;Auto with algebra).
+Lemma has_at_most_n_elements_comp :
+ forall (A : Setoid) (n m : Nat) (B C : part_set A),
+ has_at_most_n_elements n B ->
+ B =' C in _ -> n =' m in _ -> has_at_most_n_elements m C.
+intros.
+red in |- *.
+red in H.
+inversion_clear H.
+rename x into Bsize.
+inversion_clear H2.
+exists Bsize.
+split.
+generalize (eq_ind _ (fun n => Bsize <= n) H _ H1).
+auto.
+apply has_n_elements_comp with Bsize B; auto with algebra.
 Qed.
 
-Lemma has_at_least_n_elements_comp : (A:Setoid;n,m:Nat;B,C:(part_set A))
-  (has_at_least_n_elements n B) -> B='C -> n='m -> (has_at_least_n_elements m C).
-Intros.
-Rewrite <- H1.
-Red.
-Red in H.
-Inversion_clear H.
-Rename x into Bseq.
-Exists (Map_to_equal_subsets H0 Bseq).
-Red;Intros;Intro;Red in H2;(Apply (H2 i j);Auto with algebra).
-Simpl.
-Red.
-(Apply Trans with (subtype_elt (Bseq i));Auto with algebra).
-(Apply Trans with (subtype_elt (Bseq j));Auto with algebra).
-(Apply Trans with (subtype_elt (Map_to_equal_subsets H0 Bseq i));Auto with algebra).
-(Apply Trans with (subtype_elt (Map_to_equal_subsets H0 Bseq j));Auto with algebra).
+Lemma has_at_least_n_elements_comp :
+ forall (A : Setoid) (n m : Nat) (B C : part_set A),
+ has_at_least_n_elements n B ->
+ B =' C in _ -> n =' m in _ -> has_at_least_n_elements m C.
+intros.
+rewrite <- H1.
+red in |- *.
+red in H.
+inversion_clear H.
+rename x into Bseq.
+exists (Map_to_equal_subsets H0 Bseq).
+red in |- *; intros; intro; red in H2; (apply (H2 i j); auto with algebra).
+simpl in |- *.
+red in |- *.
+apply Trans with (subtype_elt (Bseq i)); auto with algebra.
+apply Trans with (subtype_elt (Bseq j)); auto with algebra.
+apply Trans with (subtype_elt (Map_to_equal_subsets H0 Bseq i));
+ auto with algebra.
+apply Trans with (subtype_elt (Map_to_equal_subsets H0 Bseq j));
+ auto with algebra.
 Qed.
 
-Lemma has_n_elements_then_has_at_least_n_elements : (A:Setoid;n:Nat)
-  (has_n_elements n A) -> (has_at_least_n_elements n A).
-Intros.
-Inversion_clear H.
-Exists x.
-Inversion_clear H0;Auto.
+Lemma has_n_elements_then_has_at_least_n_elements :
+ forall (A : Setoid) (n : Nat),
+ has_n_elements n A -> has_at_least_n_elements n A.
+intros.
+inversion_clear H.
+exists x.
+inversion_clear H0; auto.
 Qed.
 
-Lemma has_n_elements_then_has_at_most_n_elements : (A:Setoid;n:Nat)
-  (has_n_elements n A) -> (m:Nat) (le n m)->(has_at_most_n_elements m A).
-Intros.
-Exists n.
-Split;Auto with arith.
+Lemma has_n_elements_then_has_at_most_n_elements :
+ forall (A : Setoid) (n : Nat),
+ has_n_elements n A -> forall m : Nat, n <= m -> has_at_most_n_elements m A.
+intros.
+exists n.
+split; auto with arith.
 Qed.
 
-Lemma subset_has_at_least_n_elements : (A:Setoid;n:Nat;B:(part_set A))
-  (has_at_least_n_elements n B) -> (has_at_least_n_elements n A).
-Intros.
-Red;Red in H.
-Inversion_clear H.
-Exists (Map_embed x).
-Fold (distinct (Map_embed x)).
-Fold (distinct x) in H0.
-(Apply Map_embed_preserves_distinct;Auto with algebra).
+Lemma subset_has_at_least_n_elements :
+ forall (A : Setoid) (n : Nat) (B : part_set A),
+ has_at_least_n_elements n B -> has_at_least_n_elements n A.
+intros.
+red in |- *; red in H.
+inversion_clear H.
+exists (Map_embed x).
+fold (distinct (Map_embed x)) in |- *.
+fold (distinct x) in H0.
+apply Map_embed_preserves_distinct; auto with algebra.
 Qed.
 
-Lemma subset_bounds_set_size_from_below : (A:Setoid;B:(part_set A);n:Nat)
-  (has_n_elements n B) -> (has_at_least_n_elements n A).
-Intros.
-(Apply subset_has_at_least_n_elements with B;Auto with algebra).
-(Apply has_n_elements_then_has_at_least_n_elements;Auto with algebra).
+Lemma subset_bounds_set_size_from_below :
+ forall (A : Setoid) (B : part_set A) (n : Nat),
+ has_n_elements n B -> has_at_least_n_elements n A.
+intros.
+apply subset_has_at_least_n_elements with B; auto with algebra.
+apply has_n_elements_then_has_at_least_n_elements; auto with algebra.
 Qed.
 
 
-Lemma has_extra_element_strong: (A:Setoid;B,C:(part_set A);m,n:Nat)
-  (has_at_least_n_elements n B) -> (has_n_elements m C) -> (lt m n) ->
-    (EXT a:A | (in_part a B)/\~(in_part a C)).
-Intros.
-Inversion H.
-LetTac B':=(seq_set (Map_embed x)).
-Assert (has_n_elements n B').
-Red.
-Exists (seq_set_seq (Map_embed x)).
-Split.
-Unfold B'.
-Simpl.
-Red;Simpl.
-Split;Intro;Auto.
-Clear H3.
-Unfold subtype_image_equal.
-Simpl.
-NewDestruct x0.
-Simpl in subtype_prf.
-Rename subtype_elt into a.
-Inversion_clear subtype_prf.
-Exists x0.
-Simpl.
-Auto.
-Red.
-Intros.
-Simpl.
-Unfold subtype_image_equal.
-Simpl.
-Intro;(Apply (H2 i j);Auto with algebra).
-Assert (EXT a:A | (in_part a B')/\~(in_part a C)).
-(Apply has_extra_element with m n;Auto with algebra).
-Assert (included B' B).
-Red.
-Intros a Ha.
-Simpl in Ha.
-Inversion_clear Ha.
-(Apply in_part_comp_l with (subtype_elt (x x0));Auto with algebra).
-Inversion_clear H4.
-Rename x0 into a.
-Exists a.
-Inversion_clear H6.
-Split;Auto.
+Lemma has_extra_element_strong :
+ forall (A : Setoid) (B C : part_set A) (m n : Nat),
+ has_at_least_n_elements n B ->
+ has_n_elements m C -> m < n -> exists a : A, in_part a B /\ ~ in_part a C.
+intros.
+inversion H.
+set (B' := seq_set (Map_embed x)) in *.
+assert (has_n_elements n B').
+red in |- *.
+exists (seq_set_seq (Map_embed x)).
+split.
+unfold B' in |- *.
+simpl in |- *.
+red in |- *; simpl in |- *.
+split; intro; auto.
+clear H3.
+unfold subtype_image_equal in |- *.
+simpl in |- *.
+destruct x0.
+simpl in subtype_prf.
+rename subtype_elt into a.
+inversion_clear subtype_prf.
+exists x0.
+simpl in |- *.
+auto.
+red in |- *.
+intros.
+simpl in |- *.
+unfold subtype_image_equal in |- *.
+simpl in |- *.
+intro; (apply (H2 i j); auto with algebra).
+assert (exists a : A, in_part a B' /\ ~ in_part a C).
+apply has_extra_element with m n; auto with algebra.
+assert (included B' B).
+red in |- *.
+intros a Ha.
+simpl in Ha.
+inversion_clear Ha.
+apply in_part_comp_l with (subtype_elt (x x0)); auto with algebra.
+inversion_clear H4.
+rename x0 into a.
+exists a.
+inversion_clear H6.
+split; auto.
 Qed.
 
-Lemma not_at_least_then_at_most : (A:Setoid;n:Nat)
-  ~(has_at_least_n_elements (S n) A) -> (has_at_most_n_elements n A).
-Intros.
-Unfold has_at_least_n_elements in H.
-Unfold has_at_most_n_elements.
-NewInduction n.
-Exists O;Split;Auto.
-Red.
-Exists (empty_seq A).
-Split.
-Simpl.
-Red.
-Intro a;Split;Simpl;Auto.
-Intros _.
-(Apply False_ind;Auto with algebra).
-Apply H.
-Exists (const_seq (S O) a).
-Intros;Intro.
-Auto with algebra.
-Red.
-Intros.
-Auto with algebra.
-Case (classic (EXT v:(seq (S n) A) |
-              (i,j:(fin (S n)))~i =' j->~(v i) =' (v j))).
-Intro;Exists (S n).
-Split;Auto.
-Red.
-Inversion_clear H0.
-Rename x into aa.
-Exists aa.
-Split;Auto.
-Simpl;Red;Simpl.
-Intro a;Split;Auto;Intros _.
-Apply NNPP;Intro;Apply H.
-Exists a;;aa.
-Red.
-NewDestruct i;NewDestruct j.
-NewDestruct index;NewDestruct index0.
-Simpl.
-Intuition.
-Simpl.
-Intros _.
-Intro;Apply H0.
-Exists (Build_finiteT (lt_S_n n0 (S n) in_range_prf0));Auto with algebra.
-Simpl.
-Intros _.
-Intro;Apply H0.
-Exists (Build_finiteT (lt_S_n n0 (S n) in_range_prf)).
-(Apply Sym;Auto with algebra).
-Simpl.
-Intro.
-(Apply (H1 (Build_finiteT (lt_S_n n0 (S n) in_range_prf))(Build_finiteT (lt_S_n n1 (S n) in_range_prf0)));Auto with algebra).
+Lemma not_at_least_then_at_most :
+ forall (A : Setoid) (n : Nat),
+ ~ has_at_least_n_elements (S n) A -> has_at_most_n_elements n A.
+intros.
+unfold has_at_least_n_elements in H.
+unfold has_at_most_n_elements in |- *.
+induction n.
+exists 0; split; auto.
+red in |- *.
+exists (empty_seq A).
+split.
+simpl in |- *.
+red in |- *.
+intro a; split; simpl in |- *; auto.
+intros _.
+apply False_ind; auto with algebra.
+apply H.
+exists (const_seq 1 a).
+intros; intro.
+auto with algebra.
+red in |- *.
+intros.
+auto with algebra.
+case
+ (classic
+    (exists v : seq (S n) A,
+       (forall i j : fin (S n), ~ i =' j in _ -> ~ v i =' v j in _))).
+intro; exists (S n).
+split; auto.
+red in |- *.
+inversion_clear H0.
+rename x into aa.
+exists aa.
+split; auto.
+simpl in |- *; red in |- *; simpl in |- *.
+intro a; split; auto; intros _.
+apply NNPP; intro; apply H.
+exists (a;; aa).
+red in |- *.
+destruct i; destruct j.
+destruct index as [| n0];
+ [ destruct index0 as [| n0] | destruct index0 as [| n1] ].
+simpl in |- *.
+intuition.
+simpl in |- *.
+intros _.
+intro; apply H0.
+exists (Build_finiteT (lt_S_n n0 (S n) in_range_prf0)); auto with algebra.
+simpl in |- *.
+intros _.
+intro; apply H0.
+exists (Build_finiteT (lt_S_n n0 (S n) in_range_prf)).
+apply Sym; auto with algebra.
+simpl in |- *.
+intro.
+apply
+ (H1 (Build_finiteT (lt_S_n n0 (S n) in_range_prf))
+    (Build_finiteT (lt_S_n n1 (S n) in_range_prf0))); 
+ auto with algebra.
 
-Intro.
-Generalize (IHn H0);Intro p;Inversion_clear p.
-Exists x.
-Inversion_clear H1;Split;Auto.
+intro.
+generalize (IHn H0); intro p; inversion_clear p.
+exists x.
+inversion_clear H1; split; auto.
 Qed.
 
-Lemma has_n_elements_by_at_least_at_most : (A:Setoid;n:Nat)
-  (has_at_least_n_elements n A) -> (has_at_most_n_elements n A) ->
-    (has_n_elements n A).
-Intros.
-Red in H H0.
-Inversion_clear H;Inversion_clear H0.
-Inversion_clear H.
-Rename x0 into m.
-Red;Red in H2.
-Inversion_clear H2.
-Inversion_clear H.
-Rename x into aas.
-Rename x0 into Aseq.
-Exists aas.
-Split;Auto.
-(Apply Trans with (seq_set Aseq);Auto with algebra).
+Lemma has_n_elements_by_at_least_at_most :
+ forall (A : Setoid) (n : Nat),
+ has_at_least_n_elements n A ->
+ has_at_most_n_elements n A -> has_n_elements n A.
+intros.
+red in H, H0.
+inversion_clear H; inversion_clear H0.
+inversion_clear H.
+rename x0 into m.
+red in |- *; red in H2.
+inversion_clear H2.
+inversion_clear H.
+rename x into aas.
+rename x0 into Aseq.
+exists aas.
+split; auto.
+apply Trans with (seq_set Aseq); auto with algebra.
 
-Simpl;Red;Simpl.
-Intro a;Split;Simpl.
+simpl in |- *; red in |- *; simpl in |- *.
+intro a; split; simpl in |- *.
 
-2:Simpl in H2;Red in H2;Simpl in H2.
-2:Elim (H2 a);Auto.
+2: simpl in H2; red in H2; simpl in H2.
+2: elim (H2 a); auto.
 
-Intro.
-Inversion_clear H.
-Rename x into i.
-Cut (EXT j:(fin n) | (aas j)='(Aseq i)).
-Intros.
-Inversion_clear H.
-Exists x.
-(Apply Trans with (Aseq i);Auto with algebra).
-Clear H4 a.
+intro.
+inversion_clear H.
+rename x into i.
+cut (exists j : fin n, aas j =' Aseq i in _).
+intros.
+inversion_clear H.
+exists x.
+apply Trans with (Aseq i); auto with algebra.
+clear H4 a.
 
-Generalize (exists_difference H0).
-Intro;Inversion_clear H.
-Rename x into d.
-Cut (EXT j:(fin (plus m d)) | ((cast_seq aas H4) j) =' (Aseq i)).
-Intro.
-Inversion_clear H.
-Rename x into j.
-Exists (cast_fin j (sym_eq ??? H4)).
-(Apply Trans with (cast_seq aas H4 j);Auto with algebra).
+generalize (exists_difference H0).
+intro; inversion_clear H.
+rename x into d.
+cut (exists j : fin (m + d), cast_seq aas H4 j =' Aseq i in _).
+intro.
+inversion_clear H.
+rename x into j.
+exists (cast_fin j (sym_eq H4)).
+apply Trans with (cast_seq aas H4 j); auto with algebra.
 
-LetTac aas':=(cast_seq aas H4).
-Assert (distinct aas').
-Unfold aas'.
-(Apply cast_seq_preserves_distinct;Auto with algebra).
+set (aas' := cast_seq aas H4) in *.
+assert (distinct aas').
+unfold aas' in |- *.
+apply cast_seq_preserves_distinct; auto with algebra.
 
-Assert (included (seq_set aas') (seq_set Aseq)).
-Simpl in H2;Red in H2;Simpl in H2.
-Red.
-Simpl;Intros.
-Inversion_clear H5.
-Elim (H2 x);Auto with algebra.
+assert (included (seq_set aas') (seq_set Aseq)).
+simpl in H2; red in H2; simpl in H2.
+red in |- *.
+simpl in |- *; intros.
+inversion_clear H5.
+elim (H2 x); auto with algebra.
 
-ClearBody aas'.
-Clear H4 H2 H0 H1 aas n.
-Move d after m.
-Fold (distinct Aseq) in H3.
+clearbody aas'.
+clear H4 H2 H0 H1 aas n.
+move d after m.
+fold (distinct Aseq) in H3.
 
-NewInduction m.
-(Apply False_ind;Auto with algebra).
+induction m.
+apply False_ind; auto with algebra.
 
-Case (classic (head aas')='(Aseq i)).
-Intros.
-Exists (Build_finiteT (lt_O_Sn (plus m d))).
-(Apply Trans with (head aas');Auto with algebra).
+case (classic (head aas' =' Aseq i in _)).
+intros.
+exists (Build_finiteT (lt_O_Sn (m + d))).
+apply Trans with (head aas'); auto with algebra.
 
-Intros.
-Elim (H5 (head aas')).
-2:Unfold head;Simpl.
-2:Fold (plus m d).
-2:Exists (Build_finiteT (lt_O_Sn (plus m d))).
-2:Apply Refl.
+intros.
+elim (H5 (head aas')).
+2: unfold head in |- *; simpl in |- *.
+2: fold (m + d) in |- *.
+2: exists (Build_finiteT (lt_O_Sn (m + d))).
+2: apply Refl.
 
-Intros j Hj.
+intros j Hj.
 
-Assert (distinct (omit Aseq j)).
-(Apply omit_preserves_distinct;Auto with algebra).
+assert (distinct (omit Aseq j)).
+apply omit_preserves_distinct; auto with algebra.
 
-Assert ~j='i in (fin?).
-Assert ~(Aseq i)='(Aseq j).
-Intro.
-(Apply H0;Auto with algebra).
-(Apply Trans with (Aseq j);Auto with algebra).
-Intro;Apply H2.
-(Apply (Map_compatible_prf Aseq);Auto with algebra).
+assert (~ j =' i in fin _).
+assert (~ Aseq i =' Aseq j in _).
+intro.
+apply H0; auto with algebra.
+apply Trans with (Aseq j); auto with algebra.
+intro; apply H2.
+apply (Map_compatible_prf Aseq); auto with algebra.
 
-Elim (omit_removes' Aseq H2).
-Intros i' HAseqi'.
+elim (omit_removes' Aseq H2).
+intros i' HAseqi'.
 
-Assert (distinct (Seqtl aas')).
-(Apply Seqtl_preserves_distinct;Auto with algebra).
-Generalize (IHm (omit Aseq j) H1 i' (Seqtl aas') H4).
-Intros.
+assert (distinct (Seqtl aas')).
+apply Seqtl_preserves_distinct; auto with algebra.
+generalize (IHm (omit Aseq j) H1 i' (Seqtl aas') H4).
+intros.
 
-Assert (included (seq_set (Seqtl aas')) (seq_set (omit Aseq j))).
+assert (included (seq_set (Seqtl aas')) (seq_set (omit Aseq j))).
 
-2:Specialize (H6 H7).
-2:Intro.
-2:Inversion_clear H8.
-2:NewDestruct x.
-2:Exists (Build_finiteT (lt_n_S??in_range_prf)).
-2:(Apply Trans with (Seqtl aas' (Build_finiteT in_range_prf));Auto with algebra).
-2:(Apply Trans with (omit Aseq j i');Auto with algebra).
+2: specialize (H6 H7).
+2: intro.
+2: inversion_clear H8.
+2: destruct x.
+2: exists (Build_finiteT (lt_n_S _ _ in_range_prf)).
+2: apply Trans with (Seqtl aas' (Build_finiteT in_range_prf));
+    auto with algebra.
+2: apply Trans with (omit Aseq j i'); auto with algebra.
 
-Clear H6.
+clear H6.
 
-Clear IHm HAseqi' i' H2 H0 i.
-Cut (p:(fin (plus m d)))(EXT q:(fin m) | (Seqtl aas' p)='(omit Aseq j q)).
-Intro.
-Red.
-Simpl.
-Intros a Ha.
-Inversion_clear Ha.
-Generalize (H0 x);Intro p;Inversion_clear p.
-Exists x0.
-(Apply Trans with (Seqtl aas' x);Auto with algebra).
+clear IHm HAseqi' i' H2 H0 i.
+cut
+ (forall p : fin (m + d),
+  exists q : fin m, Seqtl aas' p =' omit Aseq j q in _).
+intro.
+red in |- *.
+simpl in |- *.
+intros a Ha.
+inversion_clear Ha.
+generalize (H0 x); intro p; inversion_clear p.
+exists x0.
+apply Trans with (Seqtl aas' x); auto with algebra.
 
-Intro.
-Simpl.
-NewDestruct p.
-LetTac p':=(Build_finiteT (lt_n_S index (plus m d) in_range_prf)).
+intro.
+simpl in |- *.
+destruct p.
+set (p' := Build_finiteT (lt_n_S index (m + d) in_range_prf)) in *.
 
-Assert ~p'='(Build_finiteT (lt_O_Sn (plus m d))) in(fin?).
-Unfold p';Simpl.
-Auto with arith.
+assert (~ p' =' Build_finiteT (lt_O_Sn (m + d)) in fin _).
+unfold p' in |- *; simpl in |- *.
+auto with arith.
 
-Assert (k:(fin (plus (S m) d)))(EXT l:(fin (S m)) | (aas' k)='(Aseq l)).
-Red in H5.
-Simpl in H5.
-Intro.
-Generalize (H5 (aas' k));Intro.
-Assert (EXT i:(finiteT (S (plus m d))) | (aas' k) =' (aas' i)).
-Exists k.
-Apply Refl.
-Generalize (H2 H6).
-Intro.
-Inversion_clear H7.
-Exists x.
-Auto.
+assert
+ (forall k : fin (S m + d), exists l : fin (S m), aas' k =' Aseq l in _).
+red in H5.
+simpl in H5.
+intro.
+generalize (H5 (aas' k)); intro.
+assert (exists i : finiteT (S (m + d)), aas' k =' aas' i in _).
+exists k.
+apply Refl.
+generalize (H2 H6).
+intro.
+inversion_clear H7.
+exists x.
+auto.
 
-Generalize (H2 p');Intro.
-Inversion_clear H6.
-Rename x into q.
+generalize (H2 p'); intro.
+inversion_clear H6.
+rename x into q.
 
-Cut (EXT q0:(finiteT m) | (Aseq q) =' (omit Aseq j q0)).
-Intro.
-Inversion_clear H6.
-Exists x.
-(Apply Trans with (Aseq q);Auto with algebra).
+cut (exists q0 : finiteT m, Aseq q =' omit Aseq j q0 in _).
+intro.
+inversion_clear H6.
+exists x.
+apply Trans with (Aseq q); auto with algebra.
 
-Cut ~j='q.
-Intro.
-Elim (omit_removes' Aseq H6).
-Intros;Exists x;Auto.
+cut (~ j =' q in _).
+intro.
+elim (omit_removes' Aseq H6).
+intros; exists x; auto.
 
-Assert ~(aas' p')='(head aas').
-Unfold head.
-Fold (plus m d).
-(Apply H;Auto with algebra).
-Assert ~(Aseq q)='(head aas').
-Intro;(Apply H6;Auto with algebra).
-(Apply Trans with (Aseq q);Auto with algebra).
-Assert ~(Aseq q)='(Aseq j).
-Intro;(Apply H8;Auto with algebra).
-(Apply Trans with (Aseq j);Auto with algebra).
-Intro;(Apply H9;Auto with algebra).
+assert (~ aas' p' =' head aas' in _).
+unfold head in |- *.
+fold (m + d) in |- *.
+apply H; auto with algebra.
+assert (~ Aseq q =' head aas' in _).
+intro; (apply H6; auto with algebra).
+apply Trans with (Aseq q); auto with algebra.
+assert (~ Aseq q =' Aseq j in _).
+intro; (apply H8; auto with algebra).
+apply Trans with (Aseq j); auto with algebra.
+intro; (apply H9; auto with algebra).
 Qed.
 
-Lemma inclusion_bounds_elements_from_below : (A:Setoid;B,C:(part_set A);n:Nat)
-  (has_n_elements n B) -> (included B C) -> (has_at_least_n_elements n C).
-Intros;Red.
-Red in H H0.
-Inversion_clear H.
-Inversion_clear H1.
-Assert (i:(fin n))(in_part (Map_embed x i) C).
-Intro.
-Simpl.
-(Apply H0;Auto with algebra).
-Exists (cast_map_to_subset H1).
-Red;Intros.
-Red in H2;(Apply (H2 i j);Auto with algebra).
+Lemma inclusion_bounds_elements_from_below :
+ forall (A : Setoid) (B C : part_set A) (n : Nat),
+ has_n_elements n B -> included B C -> has_at_least_n_elements n C.
+intros; red in |- *.
+red in H, H0.
+inversion_clear H.
+inversion_clear H1.
+assert (forall i : fin n, in_part (Map_embed x i) C).
+intro.
+simpl in |- *.
+apply H0; auto with algebra.
+exists (cast_map_to_subset H1).
+red in |- *; intros.
+red in H2; (apply (H2 i j); auto with algebra).
 Qed.
 
-Lemma has_n_elements_doesn't_have_more : (A:Setoid;n:Nat)
-  (has_n_elements n A) -> (m:Nat) (lt n m) -> ~(has_at_least_n_elements m A).
-Red;Intros.
-Assert (has_at_most_n_elements m A).
-Exists n.
-Split;Auto with arith.
-Generalize (has_n_elements_by_at_least_at_most H1 H2).
-Intro.
-Assert n='m.
-Assert (has_n_elements n (full A)).
-(Apply full_preserves_has_n_elements;Auto with algebra).
-Assert (has_n_elements m (full A)).
-(Apply full_preserves_has_n_elements;Auto with algebra).
-(Apply (has_n_elements_inj H4 H5);Auto with algebra).
-Rewrite H4 in H0.
-Generalize lt_n_n;Intro p;Red in p.
-(Apply p with m;Auto with algebra).
+Lemma has_n_elements_doesn't_have_more :
+ forall (A : Setoid) (n : Nat),
+ has_n_elements n A -> forall m : Nat, n < m -> ~ has_at_least_n_elements m A.
+red in |- *; intros.
+assert (has_at_most_n_elements m A).
+exists n.
+split; auto with arith.
+generalize (has_n_elements_by_at_least_at_most H1 H2).
+intro.
+assert (n =' m in _).
+assert (has_n_elements n (full A)).
+apply full_preserves_has_n_elements; auto with algebra.
+assert (has_n_elements m (full A)).
+apply full_preserves_has_n_elements; auto with algebra.
+apply (has_n_elements_inj H4 H5); auto with algebra.
+rewrite H4 in H0.
+generalize lt_irrefl; intro p; red in p.
+apply p with m; auto with algebra.
 Qed.
 
-Lemma union_has_at_most_n_plus_m_elements : (A:Setoid;B,C:(part_set A);n,m:Nat)
-  (has_n_elements n B) -> (has_n_elements m C) ->
-    (has_at_most_n_elements (plus n m) (union B C)).
-Intros.
-Red.
-Generalize Dependent B.
-NewInduction n.
-Intros.
-Exists m.
-Split;Auto with arith.
-(Apply has_n_elements_comp with m C;Auto with algebra).
-(Apply Trans with (union (empty A) C);Auto with algebra).
-(Apply union_comp;Auto with algebra).
-(Apply Sym;Auto with algebra).
+Lemma union_has_at_most_n_plus_m_elements :
+ forall (A : Setoid) (B C : part_set A) (n m : Nat),
+ has_n_elements n B ->
+ has_n_elements m C -> has_at_most_n_elements (n + m) (union B C).
+intros.
+red in |- *.
+generalize dependent B.
+induction n.
+intros.
+exists m.
+split; auto with arith.
+apply has_n_elements_comp with m C; auto with algebra.
+apply Trans with (union (empty A) C); auto with algebra.
+apply union_comp; auto with algebra.
+apply Sym; auto with algebra.
 
-Intros.
-Red in H.
-Inversion_clear H.
-Rename x into Bs.
-Inversion_clear H1.
-Red in H2.
-Assert (has_n_elements n (seq_set (Map_embed (Seqtl Bs)))).
-Red.
-Exists (seq_set_seq (Map_embed (Seqtl Bs))).
-Split.
-Change (eq_part (full (seq_set (Map_embed (Seqtl Bs)))) (seq_set (seq_set_seq (Map_embed (Seqtl Bs))))).
-Red.
-Intro.
-Simpl.
-Split;Auto.
-Intros _.
-Unfold subtype_image_equal.
-NewDestruct x.
-Simpl in subtype_prf.
-Inversion_clear subtype_prf.
-Exists x.
-Simpl.
-Auto.
-Red;Red;Intros.
-Simpl in H3.
-Red in H3.
-NewDestruct i;NewDestruct j.
-(Apply (H2 (Build_finiteT (lt_n_S ?? in_range_prf)) (Build_finiteT (lt_n_S?? in_range_prf0)));Auto with algebra).
-Simpl.
-Simpl in H1.
-Auto with arith.
-Generalize (IHn (seq_set (Map_embed (Seqtl Bs))) H1);Intro p.
-Inversion_clear p.
-Rename x into m'.
-Inversion_clear H3.
+intros.
+red in H.
+inversion_clear H.
+rename x into Bs.
+inversion_clear H1.
+red in H2.
+assert (has_n_elements n (seq_set (Map_embed (Seqtl Bs)))).
+red in |- *.
+exists (seq_set_seq (Map_embed (Seqtl Bs))).
+split.
+change
+  (eq_part (full (seq_set (Map_embed (Seqtl Bs))))
+     (seq_set (seq_set_seq (Map_embed (Seqtl Bs))))) 
+ in |- *.
+red in |- *.
+intro.
+simpl in |- *.
+split; auto.
+intros _.
+unfold subtype_image_equal in |- *.
+destruct x.
+simpl in subtype_prf.
+inversion_clear subtype_prf.
+exists x.
+simpl in |- *.
+auto.
+red in |- *; red in |- *; intros.
+simpl in H3.
+red in H3.
+destruct i; destruct j.
+apply
+ (H2 (Build_finiteT (lt_n_S _ _ in_range_prf))
+    (Build_finiteT (lt_n_S _ _ in_range_prf0))); auto with algebra.
+simpl in |- *.
+simpl in H1.
+auto with arith.
+generalize (IHn (seq_set (Map_embed (Seqtl Bs))) H1); intro p.
+inversion_clear p.
+rename x into m'.
+inversion_clear H3.
 
-Case (classic (in_part (B (head Bs)) C)).
-Intro.
-Exists m'.
-Split.
-Simpl;Auto with algebra.
-(Apply has_n_elements_comp with m' (union (seq_set (Map_embed (Seqtl Bs))) C);Auto with algebra).
-(Apply Trans with (union (inject_subsets (seq_set Bs)) C);Auto with algebra).
-2:(Apply union_comp;Auto with algebra).
-2:(Apply Trans with (inject_subsets (full B));Auto with algebra).
-Apply Trans with (union (union (single (B (head Bs))) (seq_set (Map_embed (Seqtl Bs)))) C).
-Change (eq_part (union (seq_set (Map_embed (Seqtl Bs))) C) (union
-          (union (single (B (head Bs)))
-            (seq_set (Map_embed (Seqtl Bs)))) C)).
-Red.
-Intro a;Split;Intro.
-Simpl in H6.
-Inversion_clear H6.
-Simpl.
-Left.
-Right.
-Auto.
-Simpl.
-Right.
-Auto.
-Simpl in H6.
-Inversion_clear H6.
-Inversion_clear H7.
-Simpl.
-Right.
-(Apply in_part_comp_l with (B (head Bs));Auto with algebra).
-Simpl.
-Left;Auto.
-Simpl.
-Right;Auto.
+case (classic (in_part (B (head Bs)) C)).
+intro.
+exists m'.
+split.
+simpl in |- *; auto with algebra.
+apply has_n_elements_comp with m' (union (seq_set (Map_embed (Seqtl Bs))) C);
+ auto with algebra.
+apply Trans with (union (inject_subsets (seq_set Bs)) C); auto with algebra.
+2: apply union_comp; auto with algebra.
+2: apply Trans with (inject_subsets (full B)); auto with algebra.
+apply
+ Trans
+  with
+    (union (union (single (B (head Bs))) (seq_set (Map_embed (Seqtl Bs)))) C).
+change
+  (eq_part (union (seq_set (Map_embed (Seqtl Bs))) C)
+     (union (union (single (B (head Bs))) (seq_set (Map_embed (Seqtl Bs)))) C))
+ in |- *.
+red in |- *.
+intro a; split; intro.
+simpl in H6.
+inversion_clear H6.
+simpl in |- *.
+left.
+right.
+auto.
+simpl in |- *.
+right.
+auto.
+simpl in H6.
+inversion_clear H6.
+inversion_clear H7.
+simpl in |- *.
+right.
+apply in_part_comp_l with (B (head Bs)); auto with algebra.
+simpl in |- *.
+left; auto.
+simpl in |- *.
+right; auto.
 
-Simpl;Red;Simpl.
-Intro a;Split;Intros.
-Inversion_clear H6.
-Inversion_clear H7.
-Right.
-(Apply in_part_comp_l with (B (head Bs));Auto with algebra).
-Left.
-Inversion_clear H6.
-NewDestruct  x.
-Assert (in_part (Bs (Build_finiteT (lt_n_S??in_range_prf))) (seq_set Bs)).
-Simpl.
-Exists (Build_finiteT (lt_n_S index n in_range_prf)).
-Red;Apply Refl.
-Red in H6;Exists (Build_subtype H6).
-Simpl.
-Auto.
-Right;Auto.
+simpl in |- *; red in |- *; simpl in |- *.
+intro a; split; intros.
+inversion_clear H6.
+inversion_clear H7.
+right.
+apply in_part_comp_l with (B (head Bs)); auto with algebra.
+left.
+inversion_clear H6.
+destruct x.
+assert (in_part (Bs (Build_finiteT (lt_n_S _ _ in_range_prf))) (seq_set Bs)).
+simpl in |- *.
+exists (Build_finiteT (lt_n_S index n in_range_prf)).
+red in |- *; apply Refl.
+red in H6; exists (Build_subtype H6).
+simpl in |- *.
+auto.
+right; auto.
 
-Inversion_clear H6.
-2:Right;Auto.
-Left.
-Inversion_clear H7.
-NewDestruct x.
-Rename subtype_elt into a'.
-Rename subtype_prf into Ha'.
-Simpl in Ha'.
-Inversion_clear Ha'.
-Red in H7.
-NewDestruct x.
-NewDestruct index.
-Left.
-Simpl in H6.
-(Apply Trans with (B a');Auto with algebra).
-(Apply Trans with (subtype_elt (Bs (Build_finiteT in_range_prf)));Auto with algebra).
-Right.
-Exists (Build_finiteT (lt_S_n??in_range_prf)).
-Simpl in H6.
-(Apply Trans with (subtype_elt a');Auto with algebra).
-(Apply Trans with (subtype_elt (Bs (Build_finiteT in_range_prf)));Auto with algebra).
+inversion_clear H6.
+2: right; auto.
+left.
+inversion_clear H7.
+destruct x.
+rename subtype_elt into a'.
+rename subtype_prf into Ha'.
+simpl in Ha'.
+inversion_clear Ha'.
+red in H7.
+destruct x.
+destruct index as [| n0].
+left.
+simpl in H6.
+apply Trans with (B a'); auto with algebra.
+apply Trans with (subtype_elt (Bs (Build_finiteT in_range_prf)));
+ auto with algebra.
+right.
+exists (Build_finiteT (lt_S_n _ _ in_range_prf)).
+simpl in H6.
+apply Trans with (subtype_elt a'); auto with algebra.
+apply Trans with (subtype_elt (Bs (Build_finiteT in_range_prf)));
+ auto with algebra.
 
-Intro.
-Exists (S m').
-Split.
-Simpl.
-Auto with arith.
+intro.
+exists (S m').
+split.
+simpl in |- *.
+auto with arith.
 
-Inversion_clear H5.
-Rename x into BCs.
-Inversion_clear H6.
-Assert (i:?)(in_part (Map_embed BCs i) (union B C)).
-Intro.
-Simpl.
-LetTac bc:=(BCs i).
-Change (in_part (subtype_elt bc) B)\/(in_part (subtype_elt bc) C).
-Case bc.
-Intros a Ha.
-Simpl in Ha.
-Inversion_clear Ha.
-2:Simpl;Right;Auto.
-Left.
-Inversion_clear H6.
-NewDestruct  x.
-(Apply in_part_comp_l with (subtype_elt
-              (Bs (Build_finiteT (lt_n_S index n in_range_prf))));Auto with algebra).
+inversion_clear H5.
+rename x into BCs.
+inversion_clear H6.
+assert (forall i, in_part (Map_embed BCs i) (union B C)).
+intro.
+simpl in |- *.
+set (bc := BCs i) in *.
+change (in_part (subtype_elt bc) B \/ in_part (subtype_elt bc) C) in |- *.
+case bc.
+intros a Ha.
+simpl in Ha.
+inversion_clear Ha.
+2: simpl in |- *; right; auto.
+left.
+inversion_clear H6.
+destruct x.
+apply
+ in_part_comp_l
+  with (subtype_elt (Bs (Build_finiteT (lt_n_S index n in_range_prf))));
+ auto with algebra.
 
-LetTac BCs':=((cast_map_to_subset H6)::(seq??)).
-LetTac b0:=(B (head Bs)).
-Assert (in_part b0 (union B C)).
-Simpl.
-Left.
-Unfold b0.
-Simpl.
-Auto with algebra.
-Red in H8.
-Red.
-LetTac bc0:=((Build_subtype H8)::(union B C)).
-Exists bc0;;BCs'.
-Split.
-Simpl;Red;Simpl.
-Intro bc;(Split;Auto);Intros _.
-Unfold subtype_image_equal.
-Case (classic bc='bc0 in (union B C)).
-Intro.
-Exists (Build_finiteT (lt_O_Sn m')).
-Auto with algebra.
-Intro.
-Cut (EXT i:? | (subtype_elt bc) =' (subtype_elt (BCs i)) in A).
-Intro.
-Inversion_clear H10.
-NewDestruct  x.
-Exists (Build_finiteT (lt_n_S??in_range_prf)).
-(Apply Trans with (subtype_elt (BCs (Build_finiteT in_range_prf)));Auto with algebra).
-Simpl.
-(Apply subtype_elt_comp;Auto with algebra).
+set (BCs' := cast_map_to_subset H6:seq _ _) in *.
+set (b0 := B (head Bs)) in *.
+assert (in_part b0 (union B C)).
+simpl in |- *.
+left.
+unfold b0 in |- *.
+simpl in |- *.
+auto with algebra.
+red in H8.
+red in |- *.
+set (bc0 := Build_subtype H8:union B C) in *.
+exists (bc0;; BCs').
+split.
+simpl in |- *; red in |- *; simpl in |- *.
+intro bc; (split; auto); intros _.
+unfold subtype_image_equal in |- *.
+case (classic (bc =' bc0 in union B C)).
+intro.
+exists (Build_finiteT (lt_O_Sn m')).
+auto with algebra.
+intro.
+cut (exists i : _, subtype_elt bc =' subtype_elt (BCs i) in A).
+intro.
+inversion_clear H10.
+destruct x.
+exists (Build_finiteT (lt_n_S _ _ in_range_prf)).
+apply Trans with (subtype_elt (BCs (Build_finiteT in_range_prf)));
+ auto with algebra.
+simpl in |- *.
+apply subtype_elt_comp; auto with algebra.
 
-Cut (union B C)='(seq_set (subtype_elt bc0);;(Map_embed BCs)).
-Intro.
-Simpl in H10.
-Red in H10.
-Elim (H10 (subtype_elt bc)).
-Intros.
-Clear H10 H12.
-Assert (in_part (subtype_elt bc) (union B C));Auto with algebra.
-Generalize (H11 H10);Clear H10 H11;Intro p.
-Assert (in_part (subtype_elt bc) (seq_set (Map_embed BCs))).
-Simpl in p.
-Inversion_clear p.
-NewDestruct x.
-NewDestruct index.
-(Apply False_ind;Auto with algebra).
-(Apply in_part_comp_l with (subtype_elt
-               (BCs (Build_finiteT (lt_S_n n0 m' in_range_prf))));Auto with algebra).
-Simpl.
-Exists (Build_finiteT (lt_S_n n0 m' in_range_prf)).
-Apply Refl.
-Simpl in H10.
-Auto.
+cut (union B C =' seq_set (subtype_elt bc0;; Map_embed BCs) in _).
+intro.
+simpl in H10.
+red in H10.
+elim (H10 (subtype_elt bc)).
+intros.
+clear H10 H12.
+assert (in_part (subtype_elt bc) (union B C)); auto with algebra.
+generalize (H11 H10); clear H10 H11; intro p.
+assert (in_part (subtype_elt bc) (seq_set (Map_embed BCs))).
+simpl in p.
+inversion_clear p.
+destruct x.
+destruct index as [| n0].
+apply False_ind; auto with algebra.
+apply
+ in_part_comp_l
+  with (subtype_elt (BCs (Build_finiteT (lt_S_n n0 m' in_range_prf))));
+ auto with algebra.
+simpl in |- *.
+exists (Build_finiteT (lt_S_n n0 m' in_range_prf)).
+apply Refl.
+simpl in H10.
+auto.
 
-Clear H9 bc BCs' H7 H4 H1 H2 IHn H0 m.
-Simpl;Red;Simpl.
-Intro a;Split;Intro.
-Inversion_clear H0.
-Case (classic a='b0).
-Intro;Exists (Build_finiteT (lt_O_Sn m'));Auto.
-Intro.
-Cut (in_part a (union (seq_set (Map_embed (Seqtl Bs))) C)).
-Intro p.
-Red in p.
-Assert (in_part (Build_subtype p)::(union (seq_set (Map_embed (Seqtl Bs))) C) (seq_set BCs)).
-(Apply in_part_comp_r with (full (union (seq_set (Map_embed (Seqtl Bs))) C));Auto with algebra).
-Simpl in H2.
-Inversion_clear H2.
-NewDestruct x.
-Exists (Build_finiteT (lt_n_S??in_range_prf)).
-Red in H4;Simpl in H4.
-(Apply Trans with (subtype_elt (BCs (Build_finiteT in_range_prf)));Auto with algebra).
+clear H9 bc BCs' H7 H4 H1 H2 IHn H0 m.
+simpl in |- *; red in |- *; simpl in |- *.
+intro a; split; intro.
+inversion_clear H0.
+case (classic (a =' b0 in _)).
+intro; exists (Build_finiteT (lt_O_Sn m')); auto.
+intro.
+cut (in_part a (union (seq_set (Map_embed (Seqtl Bs))) C)).
+intro p.
+red in p.
+assert
+ (in_part (Build_subtype p:union (seq_set (Map_embed (Seqtl Bs))) C)
+    (seq_set BCs)).
+apply in_part_comp_r with (full (union (seq_set (Map_embed (Seqtl Bs))) C));
+ auto with algebra.
+simpl in H2.
+inversion_clear H2.
+destruct x.
+exists (Build_finiteT (lt_n_S _ _ in_range_prf)).
+red in H4; simpl in H4.
+apply Trans with (subtype_elt (BCs (Build_finiteT in_range_prf)));
+ auto with algebra.
 
-Simpl.
-Left.
-Red in H1.
-LetTac a':=((Build_subtype H1)::B).
-Elim (H a').
-Simpl;Intros.
-Generalize (H2 I);Clear H2 H4;Intro.
-Inversion_clear H2.
-NewDestruct x.
-NewDestruct index.
-(Apply False_ind;Auto with algebra).
-Apply H0.
-Red in H4.
-(Apply Trans with (subtype_elt a');Auto with algebra).
-(Apply Trans with (subtype_elt (Bs (Build_finiteT in_range_prf)));Auto with algebra).
-Unfold b0.
-Simpl.
-(Apply subtype_elt_comp;Auto with algebra).
-Unfold head.
-Exists (Build_finiteT (lt_S_n??in_range_prf)).
-Red in H4.
-(Apply Trans with (subtype_elt a');Auto with algebra).
-(Apply Trans with (subtype_elt (Bs (Build_finiteT in_range_prf)));Auto with algebra).
+simpl in |- *.
+left.
+red in H1.
+set (a' := Build_subtype H1:B) in *.
+elim (H a').
+simpl in |- *; intros.
+generalize (H2 I); clear H2 H4; intro.
+inversion_clear H2.
+destruct x.
+destruct index as [| n0].
+apply False_ind; auto with algebra.
+apply H0.
+red in H4.
+apply Trans with (subtype_elt a'); auto with algebra.
+apply Trans with (subtype_elt (Bs (Build_finiteT in_range_prf)));
+ auto with algebra.
+unfold b0 in |- *.
+simpl in |- *.
+apply subtype_elt_comp; auto with algebra.
+unfold head in |- *.
+exists (Build_finiteT (lt_S_n _ _ in_range_prf)).
+red in H4.
+apply Trans with (subtype_elt a'); auto with algebra.
+apply Trans with (subtype_elt (Bs (Build_finiteT in_range_prf)));
+ auto with algebra.
 
-Assert (in_part a (union (seq_set (Map_embed (Seqtl Bs))) C)).
-Simpl;Right;Auto.
-Red in H0.
-Elim (H5 (Build_subtype H0)).
-Simpl;Intros.
-Generalize (H2 I);Clear H4 H2;Intro.
-Inversion_clear H2.
-NewDestruct x.
-Exists (Build_finiteT (lt_n_S??in_range_prf)).
-Red in H4;Simpl in H4.
-(Apply Trans with (subtype_elt (BCs (Build_finiteT in_range_prf)));Auto with algebra).
+assert (in_part a (union (seq_set (Map_embed (Seqtl Bs))) C)).
+simpl in |- *; right; auto.
+red in H0.
+elim (H5 (Build_subtype H0)).
+simpl in |- *; intros.
+generalize (H2 I); clear H4 H2; intro.
+inversion_clear H2.
+destruct x.
+exists (Build_finiteT (lt_n_S _ _ in_range_prf)).
+red in H4; simpl in H4.
+apply Trans with (subtype_elt (BCs (Build_finiteT in_range_prf)));
+ auto with algebra.
 
-Inversion_clear H0.
-NewDestruct x.
-NewDestruct index.
-Left.
-(Apply in_part_comp_l with b0;Auto with algebra).
-Unfold b0.
-Simpl.
-Auto with algebra.
-LetTac a'':= (BCs (Build_finiteT (lt_S_n n0 m' in_range_prf))).
-Cut (in_part (subtype_elt a'') B)\/(in_part (subtype_elt a'') C).
-Intros.
-Inversion_clear H0.
-Left.
-(Apply in_part_comp_l with (subtype_elt a'');Auto with algebra).
-Right.
-(Apply in_part_comp_l with (subtype_elt a'');Auto with algebra).
-Case a''.
-Simpl.
-Intros.
-Inversion_clear subtype_prf.
-Left.
-Inversion_clear H0.
-NewDestruct x.
-Rename subtype_elt into a'.
-(Apply in_part_comp_l with (subtype_elt
-              (Bs (Build_finiteT (lt_n_S index n in_range_prf0))));Auto with algebra).
-Right;Auto.
+inversion_clear H0.
+destruct x.
+destruct index as [| n0].
+left.
+apply in_part_comp_l with b0; auto with algebra.
+unfold b0 in |- *.
+simpl in |- *.
+auto with algebra.
+set (a'' := BCs (Build_finiteT (lt_S_n n0 m' in_range_prf))) in *.
+cut (in_part (subtype_elt a'') B \/ in_part (subtype_elt a'') C).
+intros.
+inversion_clear H0.
+left.
+apply in_part_comp_l with (subtype_elt a''); auto with algebra.
+right.
+apply in_part_comp_l with (subtype_elt a''); auto with algebra.
+case a''.
+simpl in |- *.
+intros.
+inversion_clear subtype_prf.
+left.
+inversion_clear H0.
+destruct x.
+rename subtype_elt into a'.
+apply
+ in_part_comp_l
+  with (subtype_elt (Bs (Build_finiteT (lt_n_S index n in_range_prf0))));
+ auto with algebra.
+right; auto.
 
-(Apply distinct_cons;Auto with algebra).
-Intro.
-Unfold bc0 BCs'.
-Simpl.
-Unfold subtype_image_equal.
-Simpl.
-Unfold b0.
-Simpl.
-LetTac b:=(BCs i).
-Change ~(subtype_elt (head Bs)) =' (subtype_elt b).
-Case b.
-Intros a Ha;Simpl.
-Simpl in Ha.
-Inversion_clear Ha.
-Inversion_clear H9.
-NewDestruct x.
-Intro;Red in H2;(Apply (H2 (Build_finiteT (lt_O_Sn n)) (Build_finiteT (lt_n_S??in_range_prf)));Auto with algebra).
-Simpl.
-Auto with arith.
-Simpl.
-Red.
-(Apply Trans with (subtype_elt (head Bs));Auto with algebra).
-(Apply Trans with a;Auto with algebra).
-Intro;Apply H3.
-Unfold b0.
-(Apply in_part_comp_l with a;Auto with algebra).
+apply distinct_cons; auto with algebra.
+intro.
+unfold bc0, BCs' in |- *.
+simpl in |- *.
+unfold subtype_image_equal in |- *.
+simpl in |- *.
+unfold b0 in |- *.
+simpl in |- *.
+set (b := BCs i) in *.
+change (~ subtype_elt (head Bs) =' subtype_elt b in _) in |- *.
+case b.
+intros a Ha; simpl in |- *.
+simpl in Ha.
+inversion_clear Ha.
+inversion_clear H9.
+destruct x.
+intro; red in H2;
+ (apply
+   (H2 (Build_finiteT (lt_O_Sn n)) (Build_finiteT (lt_n_S _ _ in_range_prf)));
+   auto with algebra).
+simpl in |- *.
+auto with arith.
+simpl in |- *.
+red in |- *.
+apply Trans with (subtype_elt (head Bs)); auto with algebra.
+apply Trans with a; auto with algebra.
+intro; apply H3.
+unfold b0 in |- *.
+apply in_part_comp_l with a; auto with algebra.
 Qed.
 
-Lemma subset_also_has_n_elements_then_it_is_full : (n:Nat;A:Setoid;B:(part_set A))
-  (has_n_elements n A) -> (has_n_elements n B) -> B='(full A).
+Lemma subset_also_has_n_elements_then_it_is_full :
+ forall (n : Nat) (A : Setoid) (B : part_set A),
+ has_n_elements n A -> has_n_elements n B -> B =' full A in _.
 
 (* By contradiction: suppose x in A and not x in B. Then B is also a subset of A\{x}. But the first has n elements and the latter n-1, contradicting the above result.*)
 
-Intros.
-Apply Sym.
-Apply NNPP;Intro.
-Assert (EXT x:A | ~(in_part x B)).
-Assert ~(x:A)(in_part x B).
-Intro;Red in H1;Apply H1.
-Simpl;Red;Simpl.
-Split;Auto.
-Apply NNPP;Intro;Apply H2.
-Intro a.
-Apply NNPP;Intro;Apply H3.
-Exists a;Auto.
+intros.
+apply Sym.
+apply NNPP; intro.
+assert (exists x : A, ~ in_part x B).
+assert (~ (forall x : A, in_part x B)).
+intro; red in H1; apply H1.
+simpl in |- *; red in |- *; simpl in |- *.
+split; auto.
+apply NNPP; intro; apply H2.
+intro a.
+apply NNPP; intro; apply H3.
+exists a; auto.
 
-Inversion_clear H2.
-Rename x into a.
-Assert (has_n_elements n (full A)).
-(Apply full_preserves_has_n_elements;Auto with algebra).
+inversion_clear H2.
+rename x into a.
+assert (has_n_elements n (full A)).
+apply full_preserves_has_n_elements; auto with algebra.
 
-NewDestruct n.
-Red in H.
-Inversion_clear H.
-Inversion_clear H4.
-Assert (in_part a (empty A)).
-(Apply in_part_comp_r with (full A);Auto with algebra).
-Simpl in H4.
-Auto.
+destruct n.
+red in H.
+inversion_clear H.
+inversion_clear H4.
+assert (in_part a (empty A)).
+apply in_part_comp_r with (full A); auto with algebra.
+simpl in H4.
+auto.
 (* ie. the case n=0 cannot happen; n->(S n)*)
 
-Assert (included B (diff (full A) (single a))).
-Red;Simpl.
-Split;Auto.
-Intro;(Apply H3;Auto with algebra).
-(Apply in_part_comp_l with x;Auto with algebra).
+assert (included B (diff (full A) (single a))).
+red in |- *; simpl in |- *.
+split; auto.
+intro; (apply H3; auto with algebra).
+apply in_part_comp_l with x; auto with algebra.
 
-Cut (has_n_elements n (diff (full A) (single a))).
-Intro.
-Absurd (has_at_least_n_elements (S n) ((diff (full A) (single a)))).
-(Apply has_n_elements_doesn't_have_more with n;Auto with algebra).
-(Apply inclusion_bounds_elements_from_below with B;Auto with algebra).
+cut (has_n_elements n (diff (full A) (single a))).
+intro.
+absurd (has_at_least_n_elements (S n) (diff (full A) (single a))).
+apply has_n_elements_doesn't_have_more with n; auto with algebra.
+apply inclusion_bounds_elements_from_below with B; auto with algebra.
 
-Clear H4 H3 H H1 H0 B.
-Generalize (n_element_subset_sequence H2).
-Intro.
-Inversion_clear H.
-Inversion_clear H0.
-Assert (EXT i:? | a='(x i)).
-Simpl in H;Red in H;Simpl in H.
-Generalize (H a);Intros.
-Inversion_clear H0.
-Auto.
+clear H4 H3 H H1 H0 B.
+generalize (n_element_subset_sequence H2).
+intro.
+inversion_clear H.
+inversion_clear H0.
+assert (exists i : _, a =' x i in _).
+simpl in H; red in H; simpl in H.
+generalize (H a); intros.
+inversion_clear H0.
+auto.
 
-Inversion_clear H0.
-Rename x into As;Rename x0 into i.
-(Apply has_n_elements_comp with n (seq_set (omit As i));Auto with algebra).
-Assert (j:?)(in_part (omit As i j) (seq_set (omit As i))).
-Intros.
+inversion_clear H0.
+rename x into As; rename x0 into i.
+apply has_n_elements_comp with n (seq_set (omit As i)); auto with algebra.
+assert (forall j, in_part (omit As i j) (seq_set (omit As i))).
+intros.
 Opaque omit.
-Simpl.
-Exists j.
-Apply Refl.
-Exists (cast_map_to_subset H0).
-Split.
-Simpl.
-Red.
-Simpl.
-Split;Simpl;Auto.
-Intros _.
-Unfold subtype_image_equal.
-NewDestruct x.
-Simpl in subtype_prf.
-Inversion_clear subtype_prf.
-Exists x.
-Simpl.
-(Apply Trans with (omit As i x);Auto with algebra).
-Red.
-Intros.
-Rename i0 into i'.
-Assert ~(omit As i i')='(omit As i j).
-Generalize (omit_preserves_distinct H1).
-Intro p;Generalize (p i);Clear p;Intro p;Red in p.
-(Apply p;Auto with algebra).
-Intro;Red in H5;Apply H5.
-(Apply Trans with (subtype_elt (cast_map_to_subset H0 i'));Auto with algebra).
-(Apply Trans with (subtype_elt (cast_map_to_subset H0 j));Auto with algebra).
+simpl in |- *.
+exists j.
+apply Refl.
+exists (cast_map_to_subset H0).
+split.
+simpl in |- *.
+red in |- *.
+simpl in |- *.
+split; simpl in |- *; auto.
+intros _.
+unfold subtype_image_equal in |- *.
+destruct x.
+simpl in subtype_prf.
+inversion_clear subtype_prf.
+exists x.
+simpl in |- *.
+apply Trans with (omit As i x); auto with algebra.
+red in |- *.
+intros.
+rename i0 into i'.
+assert (~ omit As i i' =' omit As i j in _).
+generalize (omit_preserves_distinct H1).
+intro p; generalize (p i); clear p; intro p; red in p.
+apply p; auto with algebra.
+intro; red in H5; apply H5.
+apply Trans with (subtype_elt (cast_map_to_subset H0 i')); auto with algebra.
+apply Trans with (subtype_elt (cast_map_to_subset H0 j)); auto with algebra.
 
-Simpl.
-Red.
-Simpl.
-Split.
-Intuition.
-Inversion_clear H0.
-Generalize distinct_omit_removes_all.
-Intro p;Generalize (p ???H1 i x0).
-Intro q;Red in q;(Apply q;Auto with algebra).
-(Apply Trans with a;Auto with algebra).
-(Apply Trans with x;Auto with algebra).
+simpl in |- *.
+red in |- *.
+simpl in |- *.
+split.
+intuition.
+inversion_clear H0.
+generalize distinct_omit_removes_all.
+intro p; generalize (p _ _ _ H1 i x0).
+intro q; red in q; (apply q; auto with algebra).
+apply Trans with a; auto with algebra.
+apply Trans with x; auto with algebra.
 
-Intuition.
-Elim (H x).
-Simpl.
-Intros p _;Generalize (p I);Clear p;Intro p.
-Inversion_clear p.
-Rename x0 into i'.
-Assert ~i='i'.
-Intro;Apply H5.
-(Apply Trans with (As i');Auto with algebra).
-(Apply Trans with (As i);Auto with algebra).
+intuition.
+elim (H x).
+simpl in |- *.
+intros p _; generalize (p I); clear p; intro p.
+inversion_clear p.
+rename x0 into i'.
+assert (~ i =' i' in _).
+intro; apply H5.
+apply Trans with (As i'); auto with algebra.
+apply Trans with (As i); auto with algebra.
 
-Elim (omit_removes' As H6).
-Intro j;Intro.
-Exists j;(Apply Trans with (As i');Auto with algebra).
+elim (omit_removes' As H6).
+intro j; intro.
+exists j; (apply Trans with (As i'); auto with algebra).
 Qed.

@@ -6,6 +6,7 @@
 Section Fn_vectors.
 
 Set Implicit Arguments.
+Unset Strict Implicit.
 Require Export vecspaces_verybasic.
 Require Export finite.
 
@@ -13,118 +14,131 @@ Require Export finite.
 (* In the beginning there was the set *)
 (**************************************)
 
-Definition Fn_set [F:Setoid;n:Nat] :SET := (seq n F).
+Definition Fn_set (F : Setoid) (n : Nat) : SET := seq n F.
 
 (******************************************)
 (* And Coq said, "let there be an sgroup" *)
 (******************************************)
 
-Local Fn_plus_fun : (F:sgroup;n:Nat)(Fn_set F n)->(Fn_set F n)->(Fn_set F n).
-Intros F n x y.
-Simpl.
-Apply (Build_Map 3!([i:(fin n)](x i)+'(y i))).
-Red.
-Elim x.
-Elim y.
-Intros.
-Red in Map_compatible_prf.
-Red in Map_compatible_prf0.
-(Apply SGROUP_comp;Auto with algebra).
+Let Fn_plus_fun :
+  forall (F : sgroup) (n : Nat), Fn_set F n -> Fn_set F n -> Fn_set F n.
+intros F n x y.
+simpl in |- *.
+apply (Build_Map (Ap:=fun i : fin n => x i +' y i)).
+red in |- *.
+elim x.
+elim y.
+intros.
+red in Map_compatible_prf.
+red in Map_compatible_prf0.
+apply SGROUP_comp; auto with algebra.
 Defined.
 
-Definition Fn_plus : (F:sgroup;n:Nat)(law_of_composition (Fn_set F n)).
-Intros F n.
-Apply (uncurry 4!(!Fn_plus_fun F n)).
-Red.
-Simpl.
-Intros.
-Red.
-Intro i.
-Simpl.
-(Apply SGROUP_comp;Auto with algebra).
+Definition Fn_plus :
+  forall (F : sgroup) (n : Nat), law_of_composition (Fn_set F n).
+intros F n.
+apply (uncurry (f:=Fn_plus_fun (F:=F) (n:=n))).
+red in |- *.
+simpl in |- *.
+intros.
+red in |- *.
+intro i.
+simpl in |- *.
+apply SGROUP_comp; auto with algebra.
 Defined.
 
-Lemma Fn_plus_associative : (F:sgroup;n:Nat)(associative (Fn_plus F n)).
-Red.
-Intros.
-Simpl.
-Red.
-Intro i.
-Simpl.
-Apply SGROUP_assoc.
+Lemma Fn_plus_associative :
+ forall (F : sgroup) (n : Nat), associative (Fn_plus F n).
+red in |- *.
+intros.
+simpl in |- *.
+red in |- *.
+intro i.
+simpl in |- *.
+apply SGROUP_assoc.
 Qed.
 
-Definition Fn_sgroup [F:sgroup;n:Nat] : SGROUP
-  := (Build_sgroup (Build_sgroup_on (!Fn_plus_associative F n))).
+Definition Fn_sgroup (F : sgroup) (n : Nat) : SGROUP :=
+  Build_sgroup (Build_sgroup_on (Fn_plus_associative (F:=F) (n:=n))).
 
 (*****************************************************)
 (* And there was an sgroup, and Abel saw it was good *)
 (*****************************************************)
 
-Lemma Fn_plus_commutative : (F:abelian_sgroup;n:Nat)(commutative (Fn_plus F n)).
-Red.
-Intros.
-Simpl.
-Red.
-Intro i.
-Simpl.
-Auto with algebra.
+Lemma Fn_plus_commutative :
+ forall (F : abelian_sgroup) (n : Nat), commutative (Fn_plus F n).
+red in |- *.
+intros.
+simpl in |- *.
+red in |- *.
+intro i.
+simpl in |- *.
+auto with algebra.
 Qed.
 
-Definition Fn_absgp [F:abelian_sgroup;n:Nat]: ABELIAN_SGROUP := (Build_abelian_sgroup (Build_abelian_sgroup_on 1!(Fn_sgroup F n) (!Fn_plus_commutative F n))).
+Definition Fn_absgp (F : abelian_sgroup) (n : Nat) : ABELIAN_SGROUP :=
+  Build_abelian_sgroup
+    (Build_abelian_sgroup_on (A:=Fn_sgroup F n)
+       (Fn_plus_commutative (F:=F) (n:=n))).
 
 (******************************************************)
 (* It is a monoid, Jim, but... exactly as we know it. *)
 (******************************************************)
 
-Definition Fn_zero : (F:monoid;n:Nat) (Fn_sgroup F n).
-Intros F n.
-Apply (Build_Map 3![i:(fin n)](zero F)).
-Red.
-Intros.
-Apply Refl.
+Definition Fn_zero : forall (F : monoid) (n : Nat), Fn_sgroup F n.
+intros F n.
+apply (Build_Map (Ap:=fun i : fin n => zero F)).
+red in |- *.
+intros.
+apply Refl.
 Defined.
 
-Lemma Fn_zero_is_r_unit : (F:monoid;n:Nat)
-  (unit_r (sgroup_law_map (Fn_sgroup F n)) (Fn_zero F n)).
-Intros F n.
-Red.
-Intro.
-Simpl.
-Red.
-Intro i.
-Simpl.
-Apply MONOID_unit_r.
+Lemma Fn_zero_is_r_unit :
+ forall (F : monoid) (n : Nat),
+ unit_r (sgroup_law_map (Fn_sgroup F n)) (Fn_zero F n).
+intros F n.
+red in |- *.
+intro.
+simpl in |- *.
+red in |- *.
+intro i.
+simpl in |- *.
+apply MONOID_unit_r.
 Qed.
 
-Lemma Fn_zero_is_l_unit :  (F:monoid;n:Nat)
-  (unit_l (sgroup_law_map (Fn_sgroup F n)) (Fn_zero F n)).
-Intros F n.
-Red.
-Intro.
-Simpl.
-Red.
-Intro i.
-Simpl.
-Apply MONOID_unit_l.
+Lemma Fn_zero_is_l_unit :
+ forall (F : monoid) (n : Nat),
+ unit_l (sgroup_law_map (Fn_sgroup F n)) (Fn_zero F n).
+intros F n.
+red in |- *.
+intro.
+simpl in |- *.
+red in |- *.
+intro i.
+simpl in |- *.
+apply MONOID_unit_l.
 Qed.
 
-Definition Fn_monoid [F:monoid;n:Nat]: MONOID := (Build_monoid (!Build_monoid_on (Fn_sgroup F n) (Fn_zero F n) (!Fn_zero_is_r_unit F n) (!Fn_zero_is_l_unit F n))).
+Definition Fn_monoid (F : monoid) (n : Nat) : MONOID :=
+  Build_monoid
+    (Build_monoid_on (A:=Fn_sgroup F n) (monoid_unit:=
+       Fn_zero F n) (Fn_zero_is_r_unit (F:=F) (n:=n))
+       (Fn_zero_is_l_unit (F:=F) (n:=n))).
 
 (*********************************)
 (* And Abel saw that it was good *)
 (*********************************)
 
-Lemma Fn_monoid_is_abelian : (F:abelian_monoid;n:Nat)
-  (abelian_monoid_on (Fn_monoid F n)).
-Intros F n.
-Apply Build_abelian_monoid_on.
-Apply Build_abelian_sgroup_on.
-Exact (!Fn_plus_commutative F n).
+Lemma Fn_monoid_is_abelian :
+ forall (F : abelian_monoid) (n : Nat), abelian_monoid_on (Fn_monoid F n).
+intros F n.
+apply Build_abelian_monoid_on.
+apply Build_abelian_sgroup_on.
+exact (Fn_plus_commutative (F:=F) (n:=n)).
 Qed.
 
-Definition Fn_abmon [F:abelian_monoid;n:Nat]: ABELIAN_MONOID := 
-  (Build_abelian_monoid (Fn_monoid_is_abelian F n)).
+Definition Fn_abmon (F : abelian_monoid) (n : Nat) : ABELIAN_MONOID :=
+  Build_abelian_monoid (Fn_monoid_is_abelian F n).
 
 (***********************************)
 (* What's in a name? That which we *)
@@ -133,90 +147,101 @@ Definition Fn_abmon [F:abelian_monoid;n:Nat]: ABELIAN_MONOID :=
 (***********************************)
 
 
-Local Fn_inv_fun : (F:group;n:Nat)(Fn_monoid F n) -> (Fn_monoid F n).
-Simpl.
-Intros F n v.
-Apply (Build_Map 3!([i:(fin n)](group_inverse F (v i)))).
-Red.
-Intros i i' H.
-(Apply GROUP_comp;Auto with algebra).
+Let Fn_inv_fun : forall (F : group) (n : Nat), Fn_monoid F n -> Fn_monoid F n.
+simpl in |- *.
+intros F n v.
+apply (Build_Map (Ap:=fun i : fin n => group_inverse F (v i))).
+red in |- *.
+intros i i' H.
+apply GROUP_comp; auto with algebra.
 Defined.
 
-Definition Fn_inv : (F:group;n:Nat) (Map (Fn_monoid F n) (Fn_monoid F n)).
-Intros F n.
-Apply (Build_Map 3!(!Fn_inv_fun F n)).
-Red.
-Intros.
-Simpl.
-Red.
-Intro i.
-Simpl in H.
-Red in H.
-Simpl.
-(Apply GROUP_comp;Auto with algebra).
+Definition Fn_inv :
+  forall (F : group) (n : Nat), Map (Fn_monoid F n) (Fn_monoid F n).
+intros F n.
+apply (Build_Map (Ap:=Fn_inv_fun (F:=F) (n:=n))).
+red in |- *.
+intros.
+simpl in |- *.
+red in |- *.
+intro i.
+simpl in H.
+red in H.
+simpl in |- *.
+apply GROUP_comp; auto with algebra.
 Defined.
 
-Lemma Fn_inv_is_r_inverse: (F:group;n:Nat)
-  (inverse_r (Fn_plus F n) (Fn_zero F n) (Fn_inv F n)).
-Intros F n.
-Red.
-Intro.
-Simpl.
-Red.
-Intro i.
-Simpl.
-Auto with algebra.
+Lemma Fn_inv_is_r_inverse :
+ forall (F : group) (n : Nat),
+ inverse_r (Fn_plus F n) (Fn_zero F n) (Fn_inv F n).
+intros F n.
+red in |- *.
+intro.
+simpl in |- *.
+red in |- *.
+intro i.
+simpl in |- *.
+auto with algebra.
 Qed.
 
-Lemma Fn_inv_is_l_inverse: (F:group;n:Nat)
-  (inverse_l (Fn_plus F n) (Fn_zero F n) (Fn_inv F n)).
-Intros F n.
-Red.
-Intro.
-Simpl.
-Red.
-Intro i.
-Simpl.
-Auto with algebra.
+Lemma Fn_inv_is_l_inverse :
+ forall (F : group) (n : Nat),
+ inverse_l (Fn_plus F n) (Fn_zero F n) (Fn_inv F n).
+intros F n.
+red in |- *.
+intro.
+simpl in |- *.
+red in |- *.
+intro i.
+simpl in |- *.
+auto with algebra.
 Qed.
 
-Definition Fn_group [F:group;n:Nat] : GROUP := (Build_group (Build_group_on 2!(Fn_inv F n) (!Fn_inv_is_r_inverse F n) (!Fn_inv_is_l_inverse F n))).
+Definition Fn_group (F : group) (n : Nat) : GROUP :=
+  Build_group
+    (Build_group_on (group_inverse_map:=Fn_inv F n)
+       (Fn_inv_is_r_inverse (F:=F) (n:=n))
+       (Fn_inv_is_l_inverse (F:=F) (n:=n))).
 
 (****************************)
 (* Once more, Abel spoke... *)
 (****************************)
 
-Lemma Fn_group_is_abelian : (F:abelian_group;n:Nat) (abelian_group_on (Fn_group F n)).
-Intros.
-Apply Build_abelian_group_on.
-Apply Build_abelian_monoid_on.
-Apply Build_abelian_sgroup_on.
-Exact (!Fn_plus_commutative F n).
+Lemma Fn_group_is_abelian :
+ forall (F : abelian_group) (n : Nat), abelian_group_on (Fn_group F n).
+intros.
+apply Build_abelian_group_on.
+apply Build_abelian_monoid_on.
+apply Build_abelian_sgroup_on.
+exact (Fn_plus_commutative (F:=F) (n:=n)).
 Qed.
 
-Definition Fn_abgp [F:abelian_group;n:Nat] :ABELIAN_GROUP
-  := (Build_abelian_group (Fn_group_is_abelian F n)).
+Definition Fn_abgp (F : abelian_group) (n : Nat) : ABELIAN_GROUP :=
+  Build_abelian_group (Fn_group_is_abelian F n).
 
 (*******************************)
 (* Alle modulen werden brueder *)
 (*******************************)
 
-Definition Fn_scmult_fun : (F:ring;n:Nat) F->(Fn_set F n)->(Fn_set F n).
-Simpl.
-Intros F n c v.
-Apply (Build_Map 3!([i:(fin n)]c rX (v i))).
-Red.
-Auto with algebra.
+Definition Fn_scmult_fun :
+  forall (F : ring) (n : Nat), F -> Fn_set F n -> Fn_set F n.
+simpl in |- *.
+intros F n c v.
+apply (Build_Map (Ap:=fun i : fin n => c rX v i)).
+red in |- *.
+auto with algebra.
 Defined.
 
-Lemma Fn_scmult_fun_comp : (F:ring;n:Nat)(c,c':F;v,v':(Fn_set F n))
-  c='c' -> v='v' -> (Fn_scmult_fun c v)='(Fn_scmult_fun c' v').
-Simpl.
-Intros.
-Red.
-Intro i.
-Simpl.
-(Apply RING_comp;Auto with algebra).
+Lemma Fn_scmult_fun_comp :
+ forall (F : ring) (n : Nat) (c c' : F) (v v' : Fn_set F n),
+ c =' c' in _ ->
+ v =' v' in _ -> Fn_scmult_fun c v =' Fn_scmult_fun c' v' in _.
+simpl in |- *.
+intros.
+red in |- *.
+intro i.
+simpl in |- *.
+apply RING_comp; auto with algebra.
 Qed.
 
 (********************************)
@@ -225,95 +250,104 @@ Qed.
 
 Section necessary_module_stuff.
 
-Local Fn_scmult_fun_map : (F:ring;n:Nat)F->(MAP (Fn_set F n) (Fn_set F n)).
-Intros F n c.
-Apply (Build_Map 3!([v:(Fn_set F n)](Fn_scmult_fun c v))).
-Red.
-Intros v v' H.
-(Apply Fn_scmult_fun_comp;Auto with algebra).
+Let Fn_scmult_fun_map :
+  forall (F : ring) (n : Nat), F -> MAP (Fn_set F n) (Fn_set F n).
+intros F n c.
+apply (Build_Map (Ap:=fun v : Fn_set F n => Fn_scmult_fun c v)).
+red in |- *.
+intros v v' H.
+apply Fn_scmult_fun_comp; auto with algebra.
 Defined.
 
-Local Fn_scmult_F_to_EndoSet : (F:ring;n:Nat)
-  (Map (Build_monoid (ring_monoid F)) (Endo_SET (Fn_set F n))).
-Intros F n.
-Simpl.
-Apply (Build_Map 3!([c:F](!Fn_scmult_fun_map F n c))).
-Red.
-Intros c c' H.
-Simpl.
-Red.
-Intro v.
-Generalize (!Fn_scmult_fun_comp F n c c' v v H).
-Simpl.
-Generalize (Refl v).
-Auto.
+Let Fn_scmult_F_to_EndoSet :
+  forall (F : ring) (n : Nat),
+  Map (Build_monoid (ring_monoid F)) (Endo_SET (Fn_set F n)).
+intros F n.
+simpl in |- *.
+apply (Build_Map (Ap:=fun c : F => Fn_scmult_fun_map (F:=F) n c)).
+red in |- *.
+intros c c' H.
+simpl in |- *.
+red in |- *.
+intro v.
+generalize
+ (Fn_scmult_fun_comp (F:=F) (n:=n) (c:=c) (c':=c') (v:=v) (v':=v) H).
+simpl in |- *.
+generalize (Refl v).
+auto.
 Defined.
 
-Local Fn_scmult_sgroup_hom : (F:ring;n:Nat)
-  (sgroup_hom (Build_monoid (ring_monoid F)) (Endo_SET (Fn_set F n))).
-Intros F n.
-Apply (Build_sgroup_hom 3!(!Fn_scmult_F_to_EndoSet F n)).
-Red.
-Simpl.
-Red.
-Intros c c' v.
-Simpl.
-Red.
-Intro i.
-Simpl.
-(Apply Trans with (ring_mult (ring_mult c c') (Ap v i));Auto with algebra).
+Let Fn_scmult_sgroup_hom :
+  forall (F : ring) (n : Nat),
+  sgroup_hom (Build_monoid (ring_monoid F)) (Endo_SET (Fn_set F n)).
+intros F n.
+apply (Build_sgroup_hom (sgroup_map:=Fn_scmult_F_to_EndoSet F n)).
+red in |- *.
+simpl in |- *.
+red in |- *.
+intros c c' v.
+simpl in |- *.
+red in |- *.
+intro i.
+simpl in |- *.
+apply Trans with ((c rX c') rX Ap v i); auto with algebra.
 Defined.
 
-Local Fn_scmult_monoid_hom : (F:ring;n:Nat)
-  (monoid_hom (Build_monoid (ring_monoid F)) (Endo_SET (Fn_set F n))).
-Intros.
-Apply (Build_monoid_hom 3!(!Fn_scmult_sgroup_hom F n)).
-Red.
-Simpl.
-Red.
-Intro v.
-Simpl.
-Red.
-Intro i.
-Simpl.
-(Apply Trans with one rX (v i);Auto with algebra).
+Let Fn_scmult_monoid_hom :
+  forall (F : ring) (n : Nat),
+  monoid_hom (Build_monoid (ring_monoid F)) (Endo_SET (Fn_set F n)).
+intros.
+apply (Build_monoid_hom (monoid_sgroup_hom:=Fn_scmult_sgroup_hom F n)).
+red in |- *.
+simpl in |- *.
+red in |- *.
+intro v.
+simpl in |- *.
+red in |- *.
+intro i.
+simpl in |- *.
+apply Trans with (one rX v i); auto with algebra.
 Defined.
 
-Definition Fn_scmult : (F:ring;n:Nat)
-  (operation (Build_monoid (ring_monoid F)) (Fn_abgp F n)).
-Intros.
-Simpl.
-Exact (Fn_scmult_monoid_hom F n).
+Definition Fn_scmult :
+  forall (F : ring) (n : Nat),
+  operation (Build_monoid (ring_monoid F)) (Fn_abgp F n).
+intros.
+simpl in |- *.
+exact (Fn_scmult_monoid_hom F n).
 Defined.
 
 End necessary_module_stuff.
 
-Lemma Fn_scmult_l_lin : (F:ring;n:Nat)(op_lin_left (Fn_scmult F n)).
-Red.
-Intros F n c c' v.
-Simpl.
-Red.
-Intro i.
-Simpl.
-Apply RING_dist_r.
+Lemma Fn_scmult_l_lin :
+ forall (F : ring) (n : Nat), op_lin_left (Fn_scmult F n).
+red in |- *.
+intros F n c c' v.
+simpl in |- *.
+red in |- *.
+intro i.
+simpl in |- *.
+apply RING_dist_r.
 Qed.
 
-Lemma Fn_scmult_r_lin : (F:ring;n:Nat)(op_lin_right (Fn_scmult F n)).
-Intros F n.
-Red.
-Intros c c' v.
-Simpl.
-Red.
-Intro i.
-Simpl.
-Apply RING_dist_l.
+Lemma Fn_scmult_r_lin :
+ forall (F : ring) (n : Nat), op_lin_right (Fn_scmult F n).
+intros F n.
+red in |- *.
+intros c c' v.
+simpl in |- *.
+red in |- *.
+intro i.
+simpl in |- *.
+apply RING_dist_l.
 Qed.
 
-Definition Fn_mod [F:ring;n:Nat]: (MODULE F)
-   := (Build_module (Build_module_on (!Fn_scmult_l_lin F n) (!Fn_scmult_r_lin F n))).
+Definition Fn_mod (F : ring) (n : Nat) : MODULE F :=
+  Build_module
+    (Build_module_on (Fn_scmult_l_lin (F:=F) (n:=n))
+       (Fn_scmult_r_lin (F:=F) (n:=n))).
 
-Definition Fn [F:field;n:Nat] : (VECSP F)
-  := ((Fn_mod F n)::(vectorspace F)).
+Definition Fn (F : field) (n : Nat) : VECSP F := Fn_mod F n:vectorspace F.
 
 End Fn_vectors.
 
@@ -322,46 +356,56 @@ End Fn_vectors.
  0 and 1 from [nat] cannot be used in $F$ *)
 Section Basis_vectors.
 
-Fixpoint Kronecker [A:Setoid;t,f:A;n,m:Nat]:A :=
-Cases n m of 
-  O O => t 
-| (S n') O => f 
-| O (S m') => f 
-| (S n') (S m') => (Kronecker t f n' m') 
-end.
+Fixpoint Kronecker (A : Setoid) (t f : A) (n m : Nat) {struct m} : A :=
+  match n, m with
+  | O, O => t
+  | S n', O => f
+  | O, S m' => f
+  | S n', S m' => Kronecker t f n' m'
+  end.
 
-Lemma Kronecker_case_equal : (A:Setoid;t,f:A;n,m:Nat)n='m->(Kronecker t f n m)='t.
-NewInduction n;NewInduction m;Auto with algebra;Intros.
-Inversion_clear H.
-Inversion_clear H.
-Simpl.
-(Apply IHn;Auto with algebra).
-Simpl;Simpl in H;Auto with arith.
+Lemma Kronecker_case_equal :
+ forall (A : Setoid) (t f : A) (n m : Nat),
+ n =' m in _ -> Kronecker t f n m =' t in _.
+induction n; induction m; auto with algebra; intros.
+inversion_clear H.
+inversion_clear H.
+simpl in |- *.
+apply IHn; auto with algebra.
+simpl in |- *; simpl in H; auto with arith.
 Qed.
 
-Lemma Kronecker_case_unequal : (A:Setoid;t,f:A;n,m:Nat)~n='m->(Kronecker t f n m)='f.
-Intros until n.
-NewInduction n.
-NewInduction m;Auto with algebra.
-Intros;Absurd O=O;Auto.
-Intros.
-NewInduction m;Auto with algebra.
-Simpl.
-(Apply IHn;Auto with algebra).
-Intro p;Red in H;Apply H;Simpl in p;Simpl;Auto with arith.
+Lemma Kronecker_case_unequal :
+ forall (A : Setoid) (t f : A) (n m : Nat),
+ ~ n =' m in _ -> Kronecker t f n m =' f in _.
+intros until n.
+induction n.
+induction m; auto with algebra.
+intros; absurd (0 = 0); auto.
+intros.
+induction m; auto with algebra.
+simpl in |- *.
+apply IHn; auto with algebra.
+intro p; red in H; apply H; simpl in p; simpl in |- *; auto with arith.
 Qed.
 
-Definition Basisvec_Fn : (F:field;n,i:Nat;H:(lt i n))((Fn F n)::Type).
-Intros.
-Simpl.
-Apply (Build_Map 3!([j:(fin n)]Cases j of (Build_finiteT j' _) => (Kronecker one (zero F) i j') end)).
-Red.
-Intros x y.
-Elim x.
-Elim y.
-Simpl.
-Intros.
-Rewrite H0.
-Apply Refl.
+Definition Basisvec_Fn :
+  forall (F : field) (n i : Nat) (H : i < n), Fn F n:Type.
+intros.
+simpl in |- *.
+apply
+ (Build_Map
+    (Ap:=fun j : fin n =>
+         match j with
+         | Build_finiteT j' _ => Kronecker one (zero F) i j'
+         end)).
+red in |- *.
+intros x y.
+elim x.
+elim y.
+simpl in |- *.
+intros.
+rewrite H0.
+apply Refl.
 Defined.
 End Basis_vectors.
