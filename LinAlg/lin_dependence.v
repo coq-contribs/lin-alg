@@ -1,5 +1,6 @@
 (** * lin_dependence.v *)
 Set Implicit Arguments.
+Unset Strict Implicit.
 Section MAIN.
 Require Export Union.
 Require Export subspaces.
@@ -11,337 +12,378 @@ Require Export distinct.
 Require Export const.
 
 Section defs.
-Variable F:field.
-Variable V:(vectorspace F).
+Variable F : field.
+Variable V : vectorspace F.
 
 (** %\tocdef{lin\_{\em[in]}dep}% *)
-Definition lin_dep := [X:(part_set V)]
-  (EXT n:Nat | (EXT a:(seq (S n) F) | (EXT v:(seq (S n) X) |
-    (distinct v)
-      /\ ~a='(const_seq (S n) (zero F))
-        /\(sum (mult_by_scalars a (Map_embed v)))=' (zero V)))).
+Definition lin_dep (X : part_set V) :=
+  exists n : Nat,
+    (exists a : seq (S n) F,
+       (exists v : seq (S n) X,
+          distinct v /\
+          ~ a =' const_seq (S n) (zero F) in _ /\
+          sum (mult_by_scalars a (Map_embed v)) =' (zero V) in _)).
 
-Definition lin_indep [X:(part_set V)] := ~(lin_dep X).
+Definition lin_indep (X : part_set V) := ~ lin_dep X.
 
-Definition lin_indep' [X:(part_set V)] :=
-  (n:Nat;a:(seq (S n) F);v:(seq (S n) X))
-    (distinct v)
-      -> ~a='(const_seq (S n) (zero F))
-        -> ~(sum (mult_by_scalars a (Map_embed v))) =' (zero V).
+Definition lin_indep' (X : part_set V) :=
+  forall (n : Nat) (a : seq (S n) F) (v : seq (S n) X),
+  distinct v ->
+  ~ a =' const_seq (S n) (zero F) in _ ->
+  ~ sum (mult_by_scalars a (Map_embed v)) =' (zero V) in _.
 
-Lemma lin_dep_comp : (X,Y:(part_set V))
-  X='Y -> (lin_dep X)->(lin_dep Y).
-Intros.
-Red.
-Red in H0.
-Inversion_clear H0.
-Exists x.
-Inversion_clear H1.
-Exists x0.
-Inversion_clear H0.
-Exists (Map_to_equal_subsets H x1).
-Split.
-Inversion_clear H1.
-Repeat Red in H0.
-Repeat Red.
-Intros.
-(Apply (H0 i j);Auto with algebra).
-Simpl.
-Red.
-Simpl in H3.
-Red in H3.
-(Apply Trans with (subtype_elt (x1 i));Auto with algebra).
-(Apply Trans with (subtype_elt (Map_to_equal_subsets H x1 i));Auto with algebra). 
-(Apply Trans with (subtype_elt (x1 j));Auto with algebra).
-(Apply Trans with (subtype_elt (Map_to_equal_subsets H x1 j));Auto with algebra). 
-Split.
-Inversion_clear H1.
-Inversion_clear H2.
-Auto.
-Inversion_clear H1.
-Inversion_clear H2.
-(Apply Trans with (sum (mult_by_scalars x0 (Map_embed x1)));Auto with algebra). 
+Lemma lin_dep_comp :
+ forall X Y : part_set V, X =' Y in _ -> lin_dep X -> lin_dep Y.
+intros.
+red in |- *.
+red in H0.
+inversion_clear H0.
+exists x.
+inversion_clear H1.
+exists x0.
+inversion_clear H0.
+exists (Map_to_equal_subsets H x1).
+split.
+inversion_clear H1.
+repeat red in H0.
+repeat red in |- *.
+intros.
+apply (H0 i j); auto with algebra.
+simpl in |- *.
+red in |- *.
+simpl in H3.
+red in H3.
+apply Trans with (subtype_elt (x1 i)); auto with algebra.
+apply Trans with (subtype_elt (Map_to_equal_subsets H x1 i));
+ auto with algebra. 
+apply Trans with (subtype_elt (x1 j)); auto with algebra.
+apply Trans with (subtype_elt (Map_to_equal_subsets H x1 j));
+ auto with algebra. 
+split.
+inversion_clear H1.
+inversion_clear H2.
+auto.
+inversion_clear H1.
+inversion_clear H2.
+apply Trans with (sum (mult_by_scalars x0 (Map_embed x1))); auto with algebra. 
 Qed.
 
-Lemma lin_indep_comp : (X,Y:(part_set V))
-  X='Y -> (lin_indep X)->(lin_indep Y).
-Intros.
-Red.
-Red.
-Red in H0.
-Red in H0.
-Intro.
-Apply H0.
-(Apply lin_dep_comp with Y;Auto with algebra).
+Lemma lin_indep_comp :
+ forall X Y : part_set V, X =' Y in _ -> lin_indep X -> lin_indep Y.
+intros.
+red in |- *.
+red in |- *.
+red in H0.
+red in H0.
+intro.
+apply H0.
+apply lin_dep_comp with Y; auto with algebra.
 Qed.
 
-Lemma lin_dep_defs_eqv : (X:(part_set V))(lin_indep X)<->(lin_indep' X).
-Unfold lin_indep.
-Unfold lin_indep'.
-Unfold lin_dep.
-Split.
-Unfold not.
-Intros.
-Apply H.
-Exists n.
-Exists a.
-Exists v.
-Split.
-Assumption.
-Split.
-Assumption.
-Assumption.
-Unfold not.
-Intros.
-Inversion_clear H0.
-Inversion_clear H1.
-Inversion_clear H0.
-Apply (H x x0 x1).
-Inversion_clear H1.
-Assumption.
-Inversion_clear H1.
-Inversion_clear H2.
-Assumption.
-Inversion_clear H1.
-Inversion_clear H2.
-Assumption.
+Lemma lin_dep_defs_eqv : forall X : part_set V, lin_indep X <-> lin_indep' X.
+unfold lin_indep in |- *.
+unfold lin_indep' in |- *.
+unfold lin_dep in |- *.
+split.
+unfold not in |- *.
+intros.
+apply H.
+exists n.
+exists a.
+exists v.
+split.
+assumption.
+split.
+assumption.
+assumption.
+unfold not in |- *.
+intros.
+inversion_clear H0.
+inversion_clear H1.
+inversion_clear H0.
+apply (H x x0 x1).
+inversion_clear H1.
+assumption.
+inversion_clear H1.
+inversion_clear H2.
+assumption.
+inversion_clear H1.
+inversion_clear H2.
+assumption.
 Qed.
 End defs.
 
 Section unexpected_true_results.
 
-Lemma zero_imp_lin_dep : (F:field;V:(vectorspace F);X:(part_set V))
-  (in_part (zero V) X)->(lin_dep X).
-Intros.
-Unfold lin_dep.
-Exists (0).
-Exists (const_seq (1) (ring_unit F)).
-Red in H.
-Exists (const_seq (1) (Build_subtype H)::X).
-Split.
-Red.
-Intros i j.
-Generalize fin_S_O_unique.
-Intros.
-Absurd i='j;Auto.
-Split.
-Cut ~(Equal one (zero F)).
-Unfold not.
-Intros.
-Apply H0.
-Simpl in H1.
-Red in H1.
-Simpl in H1.
-Apply H1.
-Exact (Build_finiteT (lt_O_Sn O)).
-Exact (field_unit_non_zero F).
-Simpl.
-(Apply Trans with (zero V)+'(zero V);Auto with algebra).
+Lemma zero_imp_lin_dep :
+ forall (F : field) (V : vectorspace F) (X : part_set V),
+ in_part (zero V) X -> lin_dep X.
+intros.
+unfold lin_dep in |- *.
+exists 0.
+exists (const_seq 1 (ring_unit F)).
+red in H.
+exists (const_seq 1 (Build_subtype H:X)).
+split.
+red in |- *.
+intros i j.
+generalize fin_S_O_unique.
+intros.
+absurd (i =' j in _); auto.
+split.
+cut (~ one =' (zero F) in _).
+unfold not in |- *.
+intros.
+apply H0.
+simpl in H1.
+red in H1.
+simpl in H1.
+apply H1.
+exact (Build_finiteT (lt_O_Sn 0)).
+exact (field_unit_non_zero F).
+simpl in |- *.
+apply Trans with ((zero V) +' (zero V)); auto with algebra.
 Qed.
 
-Lemma empty_lin_indep : (F:field; V:(vectorspace F))(lin_indep (empty V)).
-Intros.
-Unfold empty.
-Red.
-Red.
-Unfold lin_dep.
-Intro.
-Inversion_clear H.
-Inversion_clear H0.
-Inversion_clear H.
-LetTac h:=(head x1).
-Case h.
-Simpl.
-Auto.
+Lemma empty_lin_indep :
+ forall (F : field) (V : vectorspace F), lin_indep (empty V).
+intros.
+unfold empty in |- *.
+red in |- *.
+red in |- *.
+unfold lin_dep in |- *.
+intro.
+inversion_clear H.
+inversion_clear H0.
+inversion_clear H.
+set (h := head x1) in *.
+case h.
+simpl in |- *.
+auto.
 Qed.
 End unexpected_true_results.
 
 Section more.
-Variable F:field.
-Variable V:(vectorspace F).
+Variable F : field.
+Variable V : vectorspace F.
 
 (** - %\intoc{\bf Theorem 1.6}% *)
-Lemma lin_dep_include : (S1,S2:(part_set V))
-  (included S1 S2)->(lin_dep S1)->(lin_dep S2).
-Unfold lin_dep.
-Intros.
-Inversion_clear H0.
-Exists x.
-Inversion_clear H1.
-Exists x0.
-Inversion_clear H0.
-Exists (Map_include_map ? H x1).
-Split.
-Red.
-Inversion_clear H1.
-Inversion_clear H2.
-Red in H0.
-Unfold not.
-Intros.
-Unfold not in H0.
-(Apply (H0 i j);Auto with algebra).
-Split.
-Inversion_clear H1.
-Inversion_clear H2.
-Assumption.
-Inversion_clear H1.
-Inversion_clear H2.
-(Apply Trans with (sum (mult_by_scalars x0 (Map_embed x1)));Auto with algebra).
+Lemma lin_dep_include :
+ forall S1 S2 : part_set V, included S1 S2 -> lin_dep S1 -> lin_dep S2.
+unfold lin_dep in |- *.
+intros.
+inversion_clear H0.
+exists x.
+inversion_clear H1.
+exists x0.
+inversion_clear H0.
+exists (Map_include_map _ H x1).
+split.
+red in |- *.
+inversion_clear H1.
+inversion_clear H2.
+red in H0.
+unfold not in |- *.
+intros.
+unfold not in H0.
+apply (H0 i j); auto with algebra.
+split.
+inversion_clear H1.
+inversion_clear H2.
+assumption.
+inversion_clear H1.
+inversion_clear H2.
+apply Trans with (sum (mult_by_scalars x0 (Map_embed x1))); auto with algebra.
 Qed.
 
 (** - %\intoc{Corollary to theorem 1.6}% *)
-Lemma lin_indep_include : (S1,S2:(part_set V))
-  (included S1 S2)->(lin_indep S2)->(lin_indep S1).
-Intros S1 S2 H.
-Unfold lin_indep.
-Unfold not.
-Intros.
-Apply H0.
-Apply (lin_dep_include H).
-Assumption.
+Lemma lin_indep_include :
+ forall S1 S2 : part_set V, included S1 S2 -> lin_indep S2 -> lin_indep S1.
+intros S1 S2 H.
+unfold lin_indep in |- *.
+unfold not in |- *.
+intros.
+apply H0.
+apply (lin_dep_include H).
+assumption.
 Qed.
 
 (** For this we need $\neg\neg P\to P$: *)
-Lemma lin_indep_prop : (n:Nat;a:(seq n F);v:(seq n V))
-  (distinct v)
-    ->(lin_indep (seq_set v))
-      ->(sum (mult_by_scalars a v))='(zero V)
-        ->a='(const_seq n (zero F)).
-Intro n;Case n.
-Intros.
-Simpl.
-Red.
-Intro.
-Inversion x.
-Inversion in_range_prf.
-Intros.
-Elim (lin_dep_defs_eqv (seq_set v)).
-Intros.
-Generalize (H2 H0);Clear H3 H2 H0.
-Intro.
-Unfold lin_indep' in H0.
-Generalize (H0 ? a (seq_set_seq v)).
-Intro;Clear H0.
-Cut (distinct (seq_set_seq v));Auto.
-Intro.
-Generalize (H2 H0).
-Clear H2 H0.
-Intro.
-Apply NNPP.
-Unfold not;Intros.
-Unfold not in H0.
-Apply H0.
-Auto.
-(Apply Trans with (sum (mult_by_scalars a v));Auto with algebra).
+Lemma lin_indep_prop :
+ forall (n : Nat) (a : seq n F) (v : seq n V),
+ distinct v ->
+ lin_indep (seq_set v) ->
+ sum (mult_by_scalars a v) =' (zero V) in _ -> a =' const_seq n (zero F) in _.
+intro n; case n.
+intros.
+simpl in |- *.
+red in |- *.
+intro.
+inversion x.
+inversion in_range_prf.
+intros.
+elim (lin_dep_defs_eqv (seq_set v)).
+intros.
+generalize (H2 H0); clear H3 H2 H0.
+intro.
+unfold lin_indep' in H0.
+generalize (H0 _ a (seq_set_seq v)).
+intro; clear H0.
+cut (distinct (seq_set_seq v)); auto.
+intro.
+generalize (H2 H0).
+clear H2 H0.
+intro.
+apply NNPP.
+unfold not in |- *; intros.
+unfold not in H0.
+apply H0.
+auto.
+apply Trans with (sum (mult_by_scalars a v)); auto with algebra.
 Qed.
 
-Lemma lin_indep_doesn't_contain_zero : 
-  (X:(part_set V)) (lin_indep X)->~(in_part (zero V) X).
-Intros;Red;Red in H;Intro.
-Red in H;(Apply H;Auto with algebra).
-(Apply zero_imp_lin_dep;Auto with algebra).
+Lemma lin_indep_doesn't_contain_zero :
+ forall X : part_set V, lin_indep X -> ~ in_part (zero V) X.
+intros; red in |- *; red in H; intro.
+red in H; (apply H; auto with algebra).
+apply zero_imp_lin_dep; auto with algebra.
 Qed.
 
-Lemma inject_subsets_lin_dep : (W:(subspace V);X:(part_set W))
-  (lin_dep X)<->(lin_dep (inject_subsets X)).
-Split;Intros.
-Red;Red in H.
-Inversion_clear H;Inversion_clear H0;Inversion_clear H;Inversion_clear H0;Inversion_clear H1.
-Exists x;Exists x0.
-Exists (comp_map_map (Build_Map (inject_subsetsify_comp 3!X))::(MAP??) x1).
-Split;Try Split.
-2:Auto.
-Red;Red in H.
-Intros.
-Simpl.
-Intro;Red in H3.
-Red in H;(Apply (H ?? H1);Auto with algebra).
-Clear H0 H.
-(Apply Trans with (subtype_elt (zero W));Auto with algebra).
-(Apply Trans with (subtype_elt (sum (mult_by_scalars x0 (Map_embed x1))));Auto with algebra).
-(Apply Trans with (sum (Map_embed (mult_by_scalars x0 (Map_embed x1))));Auto with algebra).
-Generalize (mult_by_scalars x0 (Map_embed x1)).
-Generalize (S x).
-Intros.
-NewInduction n.
-Simpl.
-Auto with algebra.
-(Apply Trans with (head (Map_embed c))+'(sum (Seqtl (Map_embed c)));Auto with algebra).
-Apply Trans with (subtype_elt (head c)+'(sum (Seqtl c))).
-(Apply Trans with (subtype_elt (head c))+'(subtype_elt (sum (Seqtl c)));Auto with algebra).
-(Apply Trans with ((head (Map_embed c)) +' (sum (Map_embed (Seqtl c))));Auto with algebra).
-(Apply SGROUP_comp;Auto with algebra).
-(Apply sum_comp;Auto with algebra).
-(Apply Sym;Auto with algebra).
-Generalize Map_embed_Seqtl.
-Intro p.
-Apply (p ??? (c::(seq??))).
-Apply subtype_elt_comp.
-(Apply Sym;Auto with algebra).
+Lemma inject_subsets_lin_dep :
+ forall (W : subspace V) (X : part_set W),
+ lin_dep X <-> lin_dep (inject_subsets X).
+split; intros.
+red in |- *; red in H.
+inversion_clear H; inversion_clear H0; inversion_clear H; inversion_clear H0;
+ inversion_clear H1.
+exists x; exists x0.
+exists (comp_map_map (Build_Map (inject_subsetsify_comp (C:=X)):MAP _ _) x1).
+split; try split.
+2: auto.
+red in |- *; red in H.
+intros.
+simpl in |- *.
+intro; red in H3.
+red in H; (apply (H _ _ H1); auto with algebra).
+clear H0 H.
+apply Trans with (subtype_elt (zero W)); auto with algebra.
+apply Trans with (subtype_elt (sum (mult_by_scalars x0 (Map_embed x1))));
+ auto with algebra.
+apply Trans with (sum (Map_embed (mult_by_scalars x0 (Map_embed x1))));
+ auto with algebra.
+generalize (mult_by_scalars x0 (Map_embed x1)).
+generalize (S x).
+intros.
+induction n.
+simpl in |- *.
+auto with algebra.
+apply Trans with (head (Map_embed c) +' sum (Seqtl (Map_embed c)));
+ auto with algebra.
+apply Trans with (subtype_elt (head c +' sum (Seqtl c))).
+apply Trans with (subtype_elt (head c) +' subtype_elt (sum (Seqtl c)));
+ auto with algebra.
+apply Trans with (head (Map_embed c) +' sum (Map_embed (Seqtl c)));
+ auto with algebra.
+apply SGROUP_comp; auto with algebra.
+apply sum_comp; auto with algebra.
+apply Sym; auto with algebra.
+generalize Map_embed_Seqtl.
+intro p.
+apply (p _ _ _ (c:seq _ _)).
+apply subtype_elt_comp.
+apply Sym; auto with algebra.
 
-Red;Red in H.
-Inversion_clear H;Inversion_clear H0;Inversion_clear H;Inversion_clear H0;Inversion_clear H1.
-Exists x;Exists x0.
-Exists (comp_map_map (Build_Map (uninject_subsetsify_comp 3!X))::(MAP??) x1).
-Split;Try Split.
-2:Auto.
-Red;Red in H.
-Intros.
-Simpl.
-Generalize (H??H1).
-Case (x1 i);Case (x1 j).
-Simpl.
-Unfold subtype_image_equal.
-Simpl.
-Auto with algebra.
-Clear H0 H.
-Simpl.
-Red.
-(Apply Trans with (zero V);Auto with algebra).
-Apply Trans with (subtype_elt (sum (mult_by_scalars x0 (Map_embed (comp_map_map (Build_Map (uninject_subsetsify_comp 1!V 2!W 3!X))::(Map??) x1))::(Map?W)))).
+red in |- *; red in H.
+inversion_clear H; inversion_clear H0; inversion_clear H; inversion_clear H0;
+ inversion_clear H1.
+exists x; exists x0.
+exists
+ (comp_map_map (Build_Map (uninject_subsetsify_comp (C:=X)):MAP _ _) x1).
+split; try split.
+2: auto.
+red in |- *; red in H.
+intros.
+simpl in |- *.
+generalize (H _ _ H1).
+case (x1 i); case (x1 j).
+simpl in |- *.
+unfold subtype_image_equal in |- *.
+simpl in |- *.
+auto with algebra.
+clear H0 H.
+simpl in |- *.
+red in |- *.
+apply Trans with (zero V); auto with algebra.
+apply
+ Trans
+  with
+    (subtype_elt
+       (sum
+          (mult_by_scalars x0
+             (Map_embed
+                (comp_map_map
+                   (Build_Map (uninject_subsetsify_comp (A:=V) (B:=W) (C:=X))
+                    :Map _ _) x1)
+              :Map _ W)))).
 
-Simpl.
-(Apply SGROUP_comp;Auto with algebra).
-(Apply Trans with(sum (mult_by_scalars x0 (Map_embed x1)));Auto with algebra). 
-Apply Trans with (sum (Map_embed (mult_by_scalars x0 (Map_embed (comp_map_map (Build_Map (uninject_subsetsify_comp 1!V 2!W 3!X))::(Map??) x1))::(Map?W)))).
-Generalize 
-(mult_by_scalars x0
-         (Map_embed
-           (comp_map_map
-             (Build_Map (uninject_subsetsify_comp 1!V 2!W 3!X)) x1))::(Map?W)).
-Generalize (S x).
-Intros.
-(Apply Sym;Auto with algebra).
-NewInduction n.
-Simpl.
-Auto with algebra.
-(Apply Trans with (head (Map_embed c))+'(sum (Seqtl (Map_embed c)));Auto with algebra).
-Apply Trans with (subtype_elt (head c)+'(sum (Seqtl c))).
-(Apply Trans with (subtype_elt (head c))+'(subtype_elt (sum (Seqtl c)));Auto with algebra).
-(Apply Trans with ((head (Map_embed c)) +' (sum (Map_embed (Seqtl c))));Auto with algebra).
-(Apply SGROUP_comp;Auto with algebra).
-(Apply sum_comp;Auto with algebra).
-(Apply Sym;Auto with algebra).
-Generalize Map_embed_Seqtl.
-Intro p.
-Apply (p ??? (c::(seq??))).
-Apply subtype_elt_comp.
-(Apply Sym;Auto with algebra).
-Apply sum_comp.
-Simpl;Red;Simpl.
-Intro.
-(Apply MODULE_comp;Auto with algebra).
-Unfold  uninject_subsetsify.
-Case (x1 x2).
-Simpl.
-Auto with algebra.
+simpl in |- *.
+apply SGROUP_comp; auto with algebra.
+apply Trans with (sum (mult_by_scalars x0 (Map_embed x1))); auto with algebra. 
+apply
+ Trans
+  with
+    (sum
+       (Map_embed
+          (mult_by_scalars x0
+             (Map_embed
+                (comp_map_map
+                   (Build_Map (uninject_subsetsify_comp (A:=V) (B:=W) (C:=X))
+                    :Map _ _) x1)
+              :Map _ W)))).
+generalize
+ (mult_by_scalars x0
+    (Map_embed
+       (comp_map_map
+          (Build_Map (uninject_subsetsify_comp (A:=V) (B:=W) (C:=X))) x1)
+     :Map _ W)).
+generalize (S x).
+intros.
+apply Sym; auto with algebra.
+induction n.
+simpl in |- *.
+auto with algebra.
+apply Trans with (head (Map_embed c) +' sum (Seqtl (Map_embed c)));
+ auto with algebra.
+apply Trans with (subtype_elt (head c +' sum (Seqtl c))).
+apply Trans with (subtype_elt (head c) +' subtype_elt (sum (Seqtl c)));
+ auto with algebra.
+apply Trans with (head (Map_embed c) +' sum (Map_embed (Seqtl c)));
+ auto with algebra.
+apply SGROUP_comp; auto with algebra.
+apply sum_comp; auto with algebra.
+apply Sym; auto with algebra.
+generalize Map_embed_Seqtl.
+intro p.
+apply (p _ _ _ (c:seq _ _)).
+apply subtype_elt_comp.
+apply Sym; auto with algebra.
+apply sum_comp.
+simpl in |- *; red in |- *; simpl in |- *.
+intro.
+apply MODULE_comp; auto with algebra.
+unfold uninject_subsetsify in |- *.
+case (x1 x2).
+simpl in |- *.
+auto with algebra.
 Qed.
 End more.
 
 (** - The following definition is a reformulation of the book's definition on page 50 *)
 (** %\tocdef{max\_lin\_indep}% *)
-Definition max_lin_indep := [F:field;V:(vectorspace F);X,Y:(part_set V)]
-  (included X Y)/\(lin_indep X)/\(y:V) (in_part y Y)
-    -> ~(in_part y X) -> (lin_dep (union X (single y))).
+Definition max_lin_indep (F : field) (V : vectorspace F)
+  (X Y : part_set V) :=
+  included X Y /\
+  lin_indep X /\
+  (forall y : V, in_part y Y -> ~ in_part y X -> lin_dep (union X (single y))).
 
 End MAIN.

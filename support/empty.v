@@ -1,58 +1,68 @@
 (** %\subsection*{ support :  empty.v }%*)
 Set Implicit Arguments.
+Unset Strict Implicit.
 Require Export seq_set.
 (** - Lemmas on empty sets and sequences *)
 
 (* The empty sequences: *)
 (** %\label{emptyseq}% *)
-Definition empty_seq : (A:Setoid)(seq O A).
-Intro.
-(Apply (Build_Map 3![i:(fin O)]Cases i of (Build_finiteT n Hn) => (False_rect A (lt_n_O n Hn)) end);Auto with algebra).
-Red.
-Intros.
-(Apply False_ind;Auto with algebra).
+Definition empty_seq : forall A : Setoid, seq 0 A.
+intro.
+apply
+ (Build_Map
+    (Ap:=fun i : fin 0 =>
+         match i with
+         | Build_finiteT n Hn => False_rect A (lt_n_O n Hn)
+         end)); auto with algebra.
+red in |- *.
+intros.
+apply False_ind; auto with algebra.
 Defined.
 
-Lemma seq_O_is_empty : (A:Setoid;v:(seq O A)) v='(empty_seq A).
-Intros.
-Simpl.
-Red.
-Intros.
-(Apply False_ind;Auto with algebra).
+Lemma seq_O_is_empty :
+ forall (A : Setoid) (v : seq 0 A), v =' empty_seq A in _.
+intros.
+simpl in |- *.
+red in |- *.
+intros.
+apply False_ind; auto with algebra.
 Qed.
 
-Hints Resolve seq_O_is_empty : algebra.
+Hint Resolve seq_O_is_empty: algebra.
 
 
-Lemma seq_set_empty_seq_is_empty : (A:Setoid;v:(seq O A)) (seq_set v)='(empty A).
-Intros.
-(Apply Trans with (seq_set (empty_seq A));Auto with algebra).
-Simpl.
-Red.
-Split.
-Intro.
-Simpl in H.
-Inversion H;(Apply False_ind;Auto with algebra).
-Intro.
-Simpl in H.
-Contradiction.
+Lemma seq_set_empty_seq_is_empty :
+ forall (A : Setoid) (v : seq 0 A), seq_set v =' empty A in _.
+intros.
+apply Trans with (seq_set (empty_seq A)); auto with algebra.
+simpl in |- *.
+red in |- *.
+split.
+intro.
+simpl in H.
+inversion H; (apply False_ind; auto with algebra).
+intro.
+simpl in H.
+contradiction.
 Qed.
 
-Hints Resolve seq_set_empty_seq_is_empty : algebra.
+Hint Resolve seq_set_empty_seq_is_empty: algebra.
 
 
 (* The only sequence of empty-set-elements is the empty sequence *)
-Lemma no_seq_n_empty : (n:Nat;A:Setoid;W:(part_set A)) W='(empty A)->(seq n W)->n='O.
-Intros;Simpl in n;Simpl.
-NewDestruct n.
-Auto.
-Intros.
-Elim (X (Build_finiteT (lt_O_Sn n))).
-Intros a Ha.
-Simpl in H;Red in H;Simpl in H.
-Elim (H a).
-Intros.
-Generalize (H0 Ha).
-Intro.
-Contradiction.
+Lemma no_seq_n_empty :
+ forall (n : Nat) (A : Setoid) (W : part_set A),
+ W =' empty A in _ -> seq n W -> n =' 0 in _.
+intros; simpl in n; simpl in |- *.
+destruct n.
+auto.
+intros.
+elim (X (Build_finiteT (lt_O_Sn n))).
+intros a Ha.
+simpl in H; red in H; simpl in H.
+elim (H a).
+intros.
+generalize (H0 Ha).
+intro.
+contradiction.
 Qed.

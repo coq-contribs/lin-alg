@@ -1,5 +1,6 @@
 (** * Linear_Algebra_by_Friedberg_Insel_Spence.v *)
 Set Implicit Arguments.
+Unset Strict Implicit.
 
 (** - This file summarizes how I formalised Friedberg, Insel and Spence's book 
  LINEAR ALGEBRA, 2nd ed., ISBN 0-13-536855-3, (c) Prentice-Hall, Inc. *)
@@ -39,15 +40,15 @@ vectorspace = [F:field](MODULE F)
 (* Vectorspaces are semigroups as well, and hence we can use +' to add vectors. *)
 (* The vectorspace axioms now take the following form : *)
 
-Variable F:field.
-Variable V:(vectorspace F).
+Variable F : field.
+Variable V : vectorspace F.
 
-Definition VS1 : (x,y:V)(x +' y) =' (y +' x).
-  Exact (ABELIAN_SGROUP_com 1!V).
+Definition VS1 : forall x y : V, x +' y =' y +' x in _.
+  exact (ABELIAN_SGROUP_com (S:=V)).
   Qed.
 
-Definition VS2 : (x,y,z:V)((x +' y) +' z) =' (x +' (y +' z)).
-  Exact (SGROUP_assoc 1!V).
+Definition VS2 : forall x y z : V, x +' y +' z =' x +' (y +' z) in _.
+  exact (SGROUP_assoc (E:=V)).
   Qed.
 
 (* Any vectorspace V is an (abelian) monoid. Monoids always have unit elements *)
@@ -57,8 +58,9 @@ Definition VS2 : (x,y,z:V)((x +' y) +' z) =' (x +' (y +' z)).
 (* then is the zero vector, so we get (zero V) as a notation for that. *)
 (* Nonetheless, for expository purposes we'll define explicitly: *)
 
-Definition VS3 : (EXT zerovector:V | (x:V) x +' zerovector =' x).
-  Exists (zero V);Auto with algebra.
+Definition VS3 :
+  exists zerovector : V, (forall x : V, x +' zerovector =' x in _).
+  exists (zero V); auto with algebra.
   Qed.
 
 (* Now any vectorspace V is a group, and in groups, inverses are always defined. *)
@@ -66,8 +68,8 @@ Definition VS3 : (EXT zerovector:V | (x:V) x +' zerovector =' x).
 (* We will use the shorthand (min v) for the inverse of v; again because our *)
 (* groups are (almost) always commutative. Nonetheless: *)
 
-Definition VS4 : (x:V)(EXT y:V | x +' y =' (zero V)).
-  Intro;Exists (min x);Auto with algebra.
+Definition VS4 : forall x : V, exists y : V, x +' y =' (zero V) in _.
+  intro; exists (min x); auto with algebra.
   Qed.
 
 (* For rings, we introduced the shorthand "one" for Loic Pottier's (ring_unit ?) *)
@@ -78,48 +80,54 @@ Definition VS4 : (x:V)(EXT y:V | x +' y =' (zero V)).
 (* (giving another vector). In Coq we cannot do so. Therefore we use rX for *)
 (* the former and mX for the latter *)
 
-Definition VS5 : (x:V) one mX x =' x.
-  Intro;Exact (MODULE_unit_l x).
+Definition VS5 : forall x : V, one mX x =' x in _.
+  intro; exact (MODULE_unit_l x).
   Qed.
 
 (* Note the distinction between mX and rX: *)
 
-Definition VS6 : (a,b:F;x:V) (a rX b) mX x =' a mX (b mX x).
-  Intros;Exact (MODULE_assoc a b x).
+Definition VS6 : forall (a b : F) (x : V), (a rX b) mX x =' a mX b mX x in _.
+  intros; exact (MODULE_assoc a b x).
   Qed.
 
-Definition VS7 : (a:F;x,y:V) a mX (x +' y) =' (a mX x) +' (a mX y).
-  Intros;Exact (MODULE_dist_l a x y).
+Definition VS7 :
+  forall (a : F) (x y : V), a mX (x +' y) =' a mX x +' a mX y in _.
+  intros; exact (MODULE_dist_l a x y).
   Qed.
 
 (* Of course, fields are also semigroups, using the +' notation: *)
 
-Definition VS8 : (a,b:F;x:V) (a +' b) mX x =' (a mX x) +' (b mX x).
-  Intros;Exact (MODULE_dist_r a b x).
+Definition VS8 :
+  forall (a b : F) (x : V), (a +' b) mX x =' a mX x +' b mX x in _.
+  intros; exact (MODULE_dist_r a b x).
   Qed.
 
-Definition Proposition_1_1 : (x,y,z:V) x+'z='y+'z -> x='y.
-  Exact (vector_cancellation 2!V).
+Definition Proposition_1_1 :
+  forall x y z : V, x +' z =' y +' z in _ -> x =' y in _.
+  exact (vector_cancellation (V:=V)).
   Qed.
 
-Definition Proposition_1_2a : (x:V) (zero F)mX x =' (zero V).
-  Exact (Zero_times_a_vector_gives_zero 2!V).
+Definition Proposition_1_2a : forall x : V, (zero F) mX x =' (zero V) in _.
+  exact (Zero_times_a_vector_gives_zero (V:=V)).
   Qed.
 
-Definition Proposition_1_2b1 : (a:F;x:V)(min a) mX x =' (min (a mX x)).
-  Exact (Mince_minus1 2!V).
+Definition Proposition_1_2b1 :
+  forall (a : F) (x : V), (min a) mX x =' (min a mX x) in _.
+  exact (Mince_minus1 (V:=V)).
   Qed.
 
-Definition Proposition_1_2b2 : (a:F;x:V)(min (a mX x)) =' a mX (min x).
-  Exact (Mince_minus2 2!V).
+Definition Proposition_1_2b2 :
+  forall (a : F) (x : V), (min a mX x) =' a mX (min x) in _.
+  exact (Mince_minus2 (V:=V)).
   Qed.
 
-Definition Proposition_1_2b3 : (a:F;x:V)(min a) mX x ='a mX (min x).
-  Exact (Mince_minus3 2!V).
+Definition Proposition_1_2b3 :
+  forall (a : F) (x : V), (min a) mX x =' a mX (min x) in _.
+  exact (Mince_minus3 (V:=V)).
   Qed.
 
-Definition Proposition_1_2c : (a:F) a mX (zero V) =' (zero V).
-  Exact (a_scalar_times_zero_gives_zero V).
+Definition Proposition_1_2c : forall a : F, a mX (zero V) =' (zero V) in _.
+  exact (a_scalar_times_zero_gives_zero V).
   Qed.
 
 End SECTION_1_2.
@@ -138,12 +146,13 @@ Require Export subspaces.
 
 (* Note the slightly funny phrasing necessitated by Coq's type system: *)
 
-Definition Theorem_1_3 : (F:field; V:(vectorspace F); Ws:(part_set V))
-   (in_part (zero V) Ws)
-   /\((x,y:V)(in_part x Ws)->(in_part y Ws)->(in_part (x +' y) Ws))
-     /\((c:F; x:V)(in_part x Ws)->(in_part (c mX x) Ws))
-   <->(EXT W:(subspace V) | W =' Ws in (part_set V)).
-  Exact subspace_alt_characterization.
+Definition Theorem_1_3 :
+  forall (F : field) (V : vectorspace F) (Ws : part_set V),
+  in_part (zero V) Ws /\
+  (forall x y : V, in_part x Ws -> in_part y Ws -> in_part (x +' y) Ws) /\
+  (forall (c : F) (x : V), in_part x Ws -> in_part (c mX x) Ws) <->
+  (exists W : subspace V, W =' Ws in part_set V).
+  exact subspace_alt_characterization.
 Qed.
 
 (* Hence the following definition: 
@@ -155,9 +164,10 @@ is_subspace =
    /\((c:F; x:V)(in_part x W)->(in_part (c mX x) W))
      : (part_set V)->Prop*)
 
-Definition Theorem_1_4 : (F:field; V:(vectorspace F); f:(part_set (Set_of_subspaces V)))
-  (is_subspace (intersection (inject_subsets f))).
-  Exact Set_of_subspaces_closed_under_intersection.
+Definition Theorem_1_4 :
+  forall (F : field) (V : vectorspace F) (f : part_set (Set_of_subspaces V)),
+  is_subspace (intersection (inject_subsets f)).
+  exact Set_of_subspaces_closed_under_intersection.
   Qed.
 
 Require Export direct_sum.
@@ -250,18 +260,20 @@ span
 (* The actual definition of span is rather large: 70 lines *)
 (* But, of course, feel free to tell Coq to "Print span" *)
 
-Definition Theorem_1_5a : (F:field; V:(vectorspace F);S:(part_set V))
-  (is_subspace (span S)).
-  Exact span_is_subspace.
+Definition Theorem_1_5a :
+  forall (F : field) (V : vectorspace F) (S : part_set V),
+  is_subspace (span S).
+  exact span_is_subspace.
   Qed.
 
 (* The "Moreover..." bit now reads: "Moreover, span(S) is the smallest subspace of V *)
 (* containing S in the sense that span(S) is a subset of any subspace of V that *)
 (* contains S" - or rather: *)
 
-Definition Theorem_1_5b : (F:field;V:(vectorspace F);W:(subspace V);S:(part_set V))
-  (included S W)->(included (span S) W).
-  Exact span_smallest_subspace_containing_subset.
+Definition Theorem_1_5b :
+  forall (F : field) (V : vectorspace F) (W : subspace V) (S : part_set V),
+  included S W -> included (span S) W.
+  exact span_smallest_subspace_containing_subset.
   Qed.
 
 (* "generating" is defined as: *)
@@ -311,14 +323,16 @@ lin_indep' =
      : (F:field; V:(vectorspace F))(part_set V)->Prop
 Positions [1; 2] are implicit *)
 
-Definition Theorem_1_6 : (F:field; V:(vectorspace F); S1,S2:(part_set V))
-        (included S1 S2)->(lin_dep S1)->(lin_dep S2).
-  Exact lin_dep_include.
+Definition Theorem_1_6 :
+  forall (F : field) (V : vectorspace F) (S1 S2 : part_set V),
+  included S1 S2 -> lin_dep S1 -> lin_dep S2.
+  exact lin_dep_include.
   Qed.
 
-Definition Corollary_to_1_6 : (F:field; V:(vectorspace F); S1,S2:(part_set V))
-        (included S1 S2)->(lin_indep S2)->(lin_indep S1).
-  Exact lin_indep_include.
+Definition Corollary_to_1_6 :
+  forall (F : field) (V : vectorspace F) (S1 S2 : part_set V),
+  included S1 S2 -> lin_indep S2 -> lin_indep S1.
+  exact lin_indep_include.
   Qed.
 
 End SECTION_1_5.
@@ -349,92 +363,109 @@ For Build_basis: Positions [1; 2; 3] are implicit *)
 (* Using a record structure for the definition of basis, we can use basis_carrier as *)
 (* a coercion from X:(basis V) to X:(part_set V) (which Predicate V also coerces to) *)
 
-Variable F:field.
-Variable V:(vectorspace F).
-Variable x:V.
-Variable n:Nat.
+Variable F : field.
+Variable V : vectorspace F.
+Variable x : V.
+Variable n : Nat.
 
-Variable b:(seq n V).
-Variable Hb:(distinct b).
-Variable Hb2:(is_basis (seq_set b)).
+Variable b : seq n V.
+Variable Hb : distinct b.
+Variable Hb2 : is_basis (seq_set b).
 
-Definition Theorem_1_7 : (a,a':(seq n F))
-  (sum (mult_by_scalars a b))='x -> (sum (mult_by_scalars a' b))='x ->
-    a='a'.
-  Exact (basis_expansion_uniqueness Hb Hb2).
+Definition Theorem_1_7 :
+  forall a a' : seq n F,
+  sum (mult_by_scalars a b) =' x in _ ->
+  sum (mult_by_scalars a' b) =' x in _ -> a =' a' in _.
+  exact (basis_expansion_uniqueness Hb Hb2).
   Qed.
 
 Require Export lin_dep_facts.
 
-Definition Theorem_1_8 :  (s:(part_set V)) (lin_indep s) -> ~(in_part x s)->
-  ((lin_dep (union s (single x)))<->(in_part x (span s))   ). 
-  Intros.
-  Exact (lin_dep_vs_span_lemma H H0).
+Definition Theorem_1_8 :
+  forall s : part_set V,
+  lin_indep s ->
+  ~ in_part x s -> (lin_dep (union s (single x)) <-> in_part x (span s)). 
+  intros.
+  exact (lin_dep_vs_span_lemma H H0).
   Qed.
 
 Require Export bases_finite_dim.
 
-Definition Theorem_1_9 : (W0:(part_set V))
-  (is_finite_subset W0) -> (generates W0 (full V)) ->
-    (EXT W:(part_set W0) | (is_basis (inject_subsets W))).
-  Exact (every_finite_generating_set_has_a_subset_that_is_a_basis 2!V).
+Definition Theorem_1_9 :
+  forall W0 : part_set V,
+  is_finite_subset W0 ->
+  generates W0 (full V) ->
+  exists W : part_set W0, is_basis (inject_subsets W).
+  exact (every_finite_generating_set_has_a_subset_that_is_a_basis (V:=V)).
   Qed.
 
 Require Export replacement_theorem.
 
-Definition Theorem_1_10 :   (beta:(basis V);n:Nat)
-  (has_n_elements n beta) ->
-  (Sset:(part_set V)) (lin_indep Sset) ->
-  (m:Nat) (le m n) -> (has_n_elements m Sset) ->
-
-  (EXT S1:(part_set beta) | (has_n_elements (minus n m) S1) /\ 
-                            (generates (union Sset (inject_subsets S1)) (full V))).
-  Exact (replacement_theorem 2!V).
+Definition Theorem_1_10 :
+  forall (beta : basis V) (n : Nat),
+  has_n_elements n beta ->
+  forall Sset : part_set V,
+  lin_indep Sset ->
+  forall m : Nat,
+  m <= n ->
+  has_n_elements m Sset ->
+  exists S1 : part_set beta,
+    has_n_elements (n - m) S1 /\
+    generates (union Sset (inject_subsets S1)) (full V).
+  exact (replacement_theorem (V:=V)).
   Qed.
 
-Definition Corollary_1_to_1_10 : (n:Nat;beta:(basis V))
-  (has_n_elements n beta)->
-  (Sset:(part_set V)) (lin_indep Sset) -> (has_n_elements n Sset) ->
-    (is_basis Sset).
-  Exact (finite_bases_always_equally_big 2!V).
+Definition Corollary_1_to_1_10 :
+  forall (n : Nat) (beta : basis V),
+  has_n_elements n beta ->
+  forall Sset : part_set V,
+  lin_indep Sset -> has_n_elements n Sset -> is_basis Sset.
+  exact (finite_bases_always_equally_big (V:=V)).
   Qed.
 
-Definition Corollary_2_to_1_10 : (n:Nat;beta:(basis V))
-  (has_n_elements n beta)->
-  (Sset:(part_set V)) (has_at_least_n_elements (S n) Sset) ->
-    (lin_dep Sset).
-  Exact (finite_basis_bounds_lin_indep_set_size 2!V).
+Definition Corollary_2_to_1_10 :
+  forall (n : Nat) (beta : basis V),
+  has_n_elements n beta ->
+  forall Sset : part_set V,
+  has_at_least_n_elements (S n) Sset -> lin_dep Sset.
+  exact (finite_basis_bounds_lin_indep_set_size (V:=V)).
   Qed.
 
-Definition Corollary_2_to_1_10_conversely : (n:Nat;beta:(basis V))
-  (has_n_elements n beta)->
-  (Sset:(part_set V)) (lin_indep Sset) ->
-    (has_at_most_n_elements n Sset).
-  Exact (finite_basis_bounds_lin_indep_set_size' 2!V).
+Definition Corollary_2_to_1_10_conversely :
+  forall (n : Nat) (beta : basis V),
+  has_n_elements n beta ->
+  forall Sset : part_set V, lin_indep Sset -> has_at_most_n_elements n Sset.
+  exact (finite_basis_bounds_lin_indep_set_size' (V:=V)).
   Qed.
 
-Definition Corollary_3_to_1_10 : (n:Nat;beta:(basis V))
-  (has_n_elements n beta) -> (Sset:(basis V)) (has_n_elements n Sset).
-  Exact (all_finite_bases_equally_big 2!V).
+Definition Corollary_3_to_1_10 :
+  forall (n : Nat) (beta : basis V),
+  has_n_elements n beta -> forall Sset : basis V, has_n_elements n Sset.
+  exact (all_finite_bases_equally_big (V:=V)).
   Qed.
 
-Definition Corollary_4_to_1_10 :  (n:Nat)
-  (has_dim n V)->
-  (S:(part_set V)) (generates S (full V)) -> (has_at_most_n_elements n S) ->
-    (is_basis S)/\(has_n_elements n S).
-  Exact (dimension_bounds_generating_set_size 2!V).
+Definition Corollary_4_to_1_10 :
+  forall n : Nat,
+  has_dim n V ->
+  forall S : part_set V,
+  generates S (full V) ->
+  has_at_most_n_elements n S -> is_basis S /\ has_n_elements n S.
+  exact (dimension_bounds_generating_set_size (V:=V)).
   Qed.
 
-Definition Corollary_5_to_1_10 :  (is_finite_dimensional V) ->
-  (beta:(basis V);Sset:(part_set V)) (lin_indep Sset) ->
-    (EXT S1:(part_set V) | (included S1 beta)/\(is_basis (union Sset S1))).
-  Exact (every_lin_indep_set_can_be_extended_to_a_basis 2!V).
+Definition Corollary_5_to_1_10 :
+  is_finite_dimensional V ->
+  forall (beta : basis V) (Sset : part_set V),
+  lin_indep Sset ->
+  exists S1 : part_set V, included S1 beta /\ is_basis (union Sset S1).
+  exact (every_lin_indep_set_can_be_extended_to_a_basis (V:=V)).
   Qed.
 
 Require Export subspace_dim.
-Definition Theorem_1_11 : (V:(findimvecsp F);W:(subspace V))
-  (sigT nat [m] (le m (the_dim V))/\ (has_dim m W)).
-  Exact (subspace_preserves_findimvecsp 1!F).
+Definition Theorem_1_11 :
+  forall (V : findimvecsp F) (W : subspace V),
+  sigT (fun m => m <= the_dim V /\ has_dim m W).
+  exact (subspace_preserves_findimvecsp (F:=F)).
   Qed.
 End SECTION_1_6.
 
@@ -490,26 +521,30 @@ max_lin_indep =
 Positions [1; 2] are implicit *)
 
 Require Export maxlinindepsubsets.
-Definition Theorem_1_12 : (F:field;V:(vectorspace F);W:(part_set V))
-  (generates W (full V)) -> (beta:(part_set V)) (max_lin_indep beta W) ->
-    (is_basis beta).
-  Exact max_lin_indep_subsets_of_generating_sets_are_bases.
+Definition Theorem_1_12 :
+  forall (F : field) (V : vectorspace F) (W : part_set V),
+  generates W (full V) ->
+  forall beta : part_set V, max_lin_indep beta W -> is_basis beta.
+  exact max_lin_indep_subsets_of_generating_sets_are_bases.
   Qed.
 
-Definition Corollary_to_1_12 : (F:field;V:(vectorspace F);beta:(part_set V))
-  (is_basis beta)<->(max_lin_indep beta (full V)).
-  Exact basis_iff_max_lin_indep.
+Definition Corollary_to_1_12 :
+  forall (F : field) (V : vectorspace F) (beta : part_set V),
+  is_basis beta <-> max_lin_indep beta (full V).
+  exact basis_iff_max_lin_indep.
   Qed.
 
-Definition Theorem_1_13 : (F:field;V:(vectorspace F);W:(part_set V))
-  (lin_indep W) ->
-    (EXT W':(part_set V) | (max_lin_indep W' (full V))/\(included W W')).
-  Exact max_lin_indep_subset_generated.
+Definition Theorem_1_13 :
+  forall (F : field) (V : vectorspace F) (W : part_set V),
+  lin_indep W ->
+  exists W' : part_set V, max_lin_indep W' (full V) /\ included W W'.
+  exact max_lin_indep_subset_generated.
   Qed.
 
-Definition Corollary_to_1_13 : (F:field;V:(vectorspace F))
-  (EXT beta:(part_set V) | (is_basis beta)).
-  Exact every_vecsp_has_a_basis.
+Definition Corollary_to_1_13 :
+  forall (F : field) (V : vectorspace F),
+  exists beta : part_set V, is_basis beta.
+  exact every_vecsp_has_a_basis.
   Qed.
 
 End SECTION_1_7.

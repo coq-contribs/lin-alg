@@ -1,81 +1,84 @@
 (** %\subsection*{ support :  omit.v }%*)
 (** - (omit v i) = $\langle v_0...v_{i-1},v_{i+1}...v_{n-1}\rangle$ *)
 Set Implicit Arguments.
+Unset Strict Implicit.
 Require Export empty.
 Require Export conshdtl.
 
 (** %\label{omit}% *)
-Definition omit: (A:Setoid;n:Nat)(seq n A)->(fin n)->(seq (pred n) A).
-NewDestruct n.
-Auto.
-Induction n.
-Intros.
-Apply (empty_seq A).
-Intros.
-Case X0.
-Intro x;Case x.
-Intro.
-Exact (Seqtl X).
-Intros.
-Exact ((head X);;(Hrecn (Seqtl X) (Build_finiteT (lt_S_n ?? in_range_prf)))).
+Definition omit :
+  forall (A : Setoid) (n : Nat), seq n A -> fin n -> seq (pred n) A.
+destruct n.
+auto.
+induction  n as [| n Hrecn].
+intros.
+apply (empty_seq A).
+intros.
+case X0.
+intro x; case x.
+intro.
+exact (Seqtl X).
+intros.
+exact (head X;; Hrecn (Seqtl X) (Build_finiteT (lt_S_n _ _ in_range_prf))).
 Defined.
 
-Lemma omit_comp : (A:Setoid;n:Nat) (v,v':(seq n A);i,i':(fin n)) 
-  v='v' -> i='i' -> (omit v i)='(omit v' i').
-NewDestruct n.
-Intros.
-Auto with algebra.
-Induction n.
-Intros.
-Unfold omit.
-Unfold nat_rect.
-Auto with algebra.
-Intros v v' i.
-Case i.
-Intros x l i'.
-Case i'.
-Intros.
-Apply Trans with (omit v' (Build_finiteT l)).
-Unfold omit.
-Unfold nat_rect.
-Generalize l H0;Clear H0 l.
-NewDestruct x.
-Intros.
-Change (Seqtl v) =' (Seqtl v'). 
-(Apply Seqtl_comp;Auto with algebra).
-Intros.
-Simpl.
-(Apply cons_comp;Auto with algebra).
-Unfold omit in Hrecn.
-Unfold nat_rect in Hrecn.
-Apply Hrecn.
-Change (Seqtl v) =' (Seqtl v').
-(Apply Seqtl_comp;Auto with algebra).
-Auto with algebra.
-Unfold omit.
-Unfold nat_rect.
-Generalize l H0;Clear H0 l.
-NewDestruct x.
-NewDestruct index.
-Intros;Auto with algebra.
-Intros.
-Simpl in H0.
-Inversion H0.
-Intros.
-Generalize l H0;Clear H0 l.
-NewDestruct index.
-Intros.
-Simpl in H0.
-Inversion H0.
-Intros.
-Simpl.
-(Apply cons_comp;Auto with algebra).
-Unfold omit in Hrecn.
-Unfold nat_rect in Hrecn.
-(Apply Hrecn;Auto with algebra).
+Lemma omit_comp :
+ forall (A : Setoid) (n : Nat) (v v' : seq n A) (i i' : fin n),
+ v =' v' in _ -> i =' i' in _ -> omit v i =' omit v' i' in _.
+destruct n.
+intros.
+auto with algebra.
+induction  n as [| n Hrecn].
+intros.
+unfold omit in |- *.
+unfold nat_rect in |- *.
+auto with algebra.
+intros v v' i.
+case i.
+intros x l i'.
+case i'.
+intros.
+apply Trans with (omit v' (Build_finiteT l)).
+unfold omit in |- *.
+unfold nat_rect in |- *.
+generalize l H0; clear H0 l.
+destruct x as [| n0].
+intros.
+change (Seqtl v =' Seqtl v' in _) in |- *. 
+apply Seqtl_comp; auto with algebra.
+intros.
+simpl in |- *.
+apply cons_comp; auto with algebra.
+unfold omit in Hrecn.
+unfold nat_rect in Hrecn.
+apply Hrecn.
+change (Seqtl v =' Seqtl v' in _) in |- *.
+apply Seqtl_comp; auto with algebra.
+auto with algebra.
+unfold omit in |- *.
+unfold nat_rect in |- *.
+generalize l H0; clear H0 l.
+destruct x as [| n0].
+destruct index as [| n0].
+intros; auto with algebra.
+intros.
+simpl in H0.
+inversion H0.
+intros.
+generalize l H0; clear H0 l.
+destruct index as [| n1].
+intros.
+simpl in H0.
+inversion H0.
+intros.
+simpl in |- *.
+apply cons_comp; auto with algebra.
+unfold omit in Hrecn.
+unfold nat_rect in Hrecn.
+apply Hrecn; auto with algebra.
 Qed.
 
-Hints Resolve omit_comp : algebra.
+Hint Resolve omit_comp: algebra.
 
 
 (** - The following are actually definitions. omit_removes does the following: 
@@ -83,104 +86,129 @@ Hints Resolve omit_comp : algebra.
  = (v j') for some j'. Omit_removes returns this j' and a proof of this fact
  (packed together in a sigma-type). *)
 
-Lemma omit_removes : (n:Nat;A:Setoid;v:(seq n A);i:(fin n);j:(fin (pred n)))
-  (sigT (fin n) [i'](v i')='((omit v i) j)).
-NewDestruct n.
-Intros.
-(Apply False_rect;Auto with algebra).
+Lemma omit_removes :
+ forall (n : Nat) (A : Setoid) (v : seq n A) (i : fin n) (j : fin (pred n)),
+ sigT (fun i' => v i' =' omit v i j in _).
+destruct n.
+intros.
+apply False_rect; auto with algebra.
 
-Intros.
-Generalize (j::(fin n)).
-Clear j.
-Intro j.
+intros.
+generalize (j:fin n).
+clear j.
+intro j.
 
-Induction n.
-Apply False_rect.
-(Apply fin_O_nonexistent;Auto with algebra).
+induction  n as [| n Hrecn].
+apply False_rect.
+apply fin_O_nonexistent; auto with algebra.
 
-Case i.
-Intro x;Case x.
-Intros.
-LetTac l:=in_range_prf.
-Case j.
-Intros.
-LetTac l0:=in_range_prf0.
-Apply (existT ? [i':(fin (S (S n)))] ((Ap v i') =' ((omit v (Build_finiteT l)) (Build_finiteT l0))) (Build_finiteT (lt_n_S ?? l0))).
-(Apply Trans with ((Seqtl v) (Build_finiteT l0));Auto with algebra).
+case i.
+intro x; case x.
+intros.
+set (l := in_range_prf) in *.
+case j.
+intros.
+set (l0 := in_range_prf0) in *.
+apply
+ (existT
+    (fun i' : fin (S (S n)) =>
+     Ap v i' =' omit v (Build_finiteT l) (Build_finiteT l0) in _)
+    (Build_finiteT (lt_n_S _ _ l0))).
+apply Trans with (Seqtl v (Build_finiteT l0)); auto with algebra.
 
-Intros.
-Rename in_range_prf into l.
-Case j.
-Intro x0; Case x0.
-Intro l0.
-Apply (existT (fin (S (S n))) [i':(fin (S (S n)))] ((Ap v i') =' (Ap (omit v (Build_finiteT l)) (Build_finiteT l0))) (Build_finiteT (lt_O_Sn (S n)))).
-(Apply Trans with (head (omit v (Build_finiteT l)));Auto with algebra).
+intros.
+rename in_range_prf into l.
+case j.
+intro x0; case x0.
+intro l0.
+apply
+ (existT
+    (fun i' : fin (S (S n)) =>
+     Ap v i' =' Ap (omit v (Build_finiteT l)) (Build_finiteT l0) in _)
+    (Build_finiteT (lt_O_Sn (S n)))).
+apply Trans with (head (omit v (Build_finiteT l))); auto with algebra.
 
-Intros.
-Rename in_range_prf into l0.
-Generalize (Hrecn (Seqtl v) (Build_finiteT (lt_S_n ?? l)) (Build_finiteT (lt_S_n ?? l0))).
-Intro.
-Inversion_clear X.
-Generalize H.
-Clear H.
-Case x1.
-Intros.
-Apply (existT (fin (S (S n))) [i':(fin (S (S n)))] ((Ap v i') =' (Ap (omit v (Build_finiteT l)) (Build_finiteT l0))) (Build_finiteT (lt_n_S ?? in_range_prf))).
-(Apply Trans with ((head v);;(omit (Seqtl v) (Build_finiteT (lt_S_n ?? l))) (Build_finiteT l0));Auto with algebra).
+intros.
+rename in_range_prf into l0.
+generalize
+ (Hrecn (Seqtl v) (Build_finiteT (lt_S_n _ _ l))
+    (Build_finiteT (lt_S_n _ _ l0))).
+intro.
+inversion_clear X.
+generalize H.
+clear H.
+case x1.
+intros.
+apply
+ (existT
+    (fun i' : fin (S (S n)) =>
+     Ap v i' =' Ap (omit v (Build_finiteT l)) (Build_finiteT l0) in _)
+    (Build_finiteT (lt_n_S _ _ in_range_prf))).
+apply
+ Trans
+  with
+    ((head v;; omit (Seqtl v) (Build_finiteT (lt_S_n _ _ l)))
+       (Build_finiteT l0)); auto with algebra.
 Defined.
 
 (** - omit_removes' on the other hand does this: suppose again v:(seq n A) and i:(fin n)
  and define w:=(omit v i). Suppose that this time j:(fin n). If [~i='j] then (v j)='(w j')
  for some j'; again omit_removes' returns this j' and a proof. *)
 
-Lemma omit_removes' : (n:Nat;A:Setoid;v:(seq n A);i,j:(fin n))
-  ~i='j -> (sigT (fin (pred n)) [j'](v j)='((omit v i) j')).
-NewDestruct n.
-Intros.
-(Apply False_rect;Auto with algebra).
+Lemma omit_removes' :
+ forall (n : Nat) (A : Setoid) (v : seq n A) (i j : fin n),
+ ~ i =' j in _ -> sigT (fun j' => v j =' omit v i j' in _).
+destruct n.
+intros.
+apply False_rect; auto with algebra.
 
-Induction n.
-Intros.
-Absurd i='j.
-Auto.
-(Apply fin_S_O_unique;Auto with algebra).
-Intros A v i.
-Elim i.
-Intro i';Case i'.
-Intros Hi j.
-Elim j.
-Intro j';Case j'.
-Intros.
-Simpl in H.
-Absurd O=O;Auto.
-Intros n0 p0 H.
-Exists (Build_finiteT (lt_S_n ?? p0)).
-Simpl.
-(Apply Ap_comp;Auto with algebra).
-Simpl.
-Auto.
+induction  n as [| n Hrecn].
+intros.
+absurd (i =' j in _).
+auto.
+apply fin_S_O_unique; auto with algebra.
+intros A v i.
+elim i.
+intro i'; case i'.
+intros Hi j.
+elim j.
+intro j'; case j'.
+intros.
+simpl in H.
+absurd (0 = 0); auto.
+intros n0 p0 H.
+exists (Build_finiteT (lt_S_n _ _ p0)).
+simpl in |- *.
+apply Ap_comp; auto with algebra.
+simpl in |- *.
+auto.
 
-Intros gat Hg vraag. 
-Elim vraag.
-Intro vr;Case vr.
-Intros Hvr H.
-Exists (Build_finiteT (lt_O_Sn n)).
-Simpl.
-Unfold head.
-(Apply Ap_comp;Auto with algebra).
-Simpl.
-Auto.
+intros gat Hg vraag. 
+elim vraag.
+intro vr; case vr.
+intros Hvr H.
+exists (Build_finiteT (lt_O_Sn n)).
+simpl in |- *.
+unfold head in |- *.
+apply Ap_comp; auto with algebra.
+simpl in |- *.
+auto.
 
-Intros vr' Hvr H.
-Assert ~(Build_finiteT (lt_S_n ?? Hg))='(Build_finiteT (lt_S_n ?? Hvr))in(fin?).
-Simpl;Simpl in H;Auto.
-LetTac aw:=(!Hrecn ? (Seqtl v) ?? H0).
-Case aw.
-Intro x;Elim x.
-Intros.
-Exists (Build_finiteT (lt_n_S??in_range_prf)).
-Apply Trans with (Seqtl v (Build_finiteT (lt_S_n vr' (S n) Hvr))).
-Apply Sym.
-(Apply Seqtl_to_seq;Auto with algebra).
-(Apply Trans with (omit (Seqtl v) (Build_finiteT (lt_S_n gat (S n) Hg)) (Build_finiteT in_range_prf));Auto with algebra).
+intros vr' Hvr H.
+assert
+ (~ Build_finiteT (lt_S_n _ _ Hg) =' Build_finiteT (lt_S_n _ _ Hvr) in fin _).
+simpl in |- *; simpl in H; auto.
+set (aw := Hrecn _ (Seqtl v) _ _ H0) in *.
+case aw.
+intro x; elim x.
+intros.
+exists (Build_finiteT (lt_n_S _ _ in_range_prf)).
+apply Trans with (Seqtl v (Build_finiteT (lt_S_n vr' (S n) Hvr))).
+apply Sym.
+apply Seqtl_to_seq; auto with algebra.
+apply
+ Trans
+  with
+    (omit (Seqtl v) (Build_finiteT (lt_S_n gat (S n) Hg))
+       (Build_finiteT in_range_prf)); auto with algebra.
 Defined.

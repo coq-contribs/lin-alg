@@ -64,13 +64,13 @@ PP=-pp "camlp4o -I . -I $(COQTOP)/parsing $(CAMLP4EXTEND) $(GRAMMARS) -impl"
 #########################
 
 OCAMLLIBS=-I .\
-  -I ../../Sophia-Antipolis/Algebra/\
+  -I Algebra/\
   -I examples\
   -I extras\
   -I support\
   -I LinAlg
 COQLIBS=-I .\
-  -I ../../Sophia-Antipolis/Algebra/\
+  -I Algebra/\
   -I examples\
   -I extras\
   -I support\

@@ -1,5 +1,6 @@
 (** * lin_dep_facts.v *)
 Set Implicit Arguments.
+Unset Strict Implicit.
 Require Export lin_dependence.
 Require Export lin_comb_facts.
 Require Export subseqs.
@@ -9,534 +10,637 @@ Require Export distinct_facts.
 (** - If $a_i\neq0$ and $\sum_ka_kv_k=0$, then $v_i=-a_i^{-1}\sum_{k\neq i}a_kv_k$ *)
 
 Lemma rewrite_lin_comb_term :
-  (F:field;V:(vectorspace F);n:Nat;a:(seq (S n) F);v:(seq (S n) V);i:(fin (S n)))
-    ~(a i)='(zero F) -> (sum (mult_by_scalars a v))='(zero V) ->
-      (v i)='((field_inverse (a i)) mX (min (sum (omit (mult_by_scalars a v) i)))).
-Intros.
-Assert (a i)mX(v i) =' (a i)mX((field_inverse (a i)) mX (min (sum (omit (mult_by_scalars a v) i)))).
+ forall (F : field) (V : vectorspace F) (n : Nat) (a : seq (S n) F)
+   (v : seq (S n) V) (i : fin (S n)),
+ ~ a i =' (zero F) in _ ->
+ sum (mult_by_scalars a v) =' (zero V) in _ ->
+ v i =' field_inverse (a i) mX (min sum (omit (mult_by_scalars a v) i)) in _.
+intros.
+assert
+ (a i mX v i ='
+  a i mX field_inverse (a i) mX (min sum (omit (mult_by_scalars a v) i)) in _).
 
-(Apply Trans with ((mult_by_scalars a v) i);Auto with algebra).
-(Apply Trans with ((a i)rX(field_inverse (a i)))mX(min (sum (omit (mult_by_scalars a v) i)));Auto with algebra).
-(Apply Trans with one mX (min (sum (omit (mult_by_scalars a v) i)));Auto with algebra).
+apply Trans with (mult_by_scalars a v i); auto with algebra.
+apply
+ Trans
+  with
+    ((a i rX field_inverse (a i)) mX (min sum (omit (mult_by_scalars a v) i)));
+ auto with algebra.
+apply Trans with (one mX (min sum (omit (mult_by_scalars a v) i)));
+ auto with algebra.
 
-(Apply Trans with (min (sum (omit (mult_by_scalars a v) i)));Auto with algebra).
-Assert ((mult_by_scalars a v) i)+'(sum (omit (mult_by_scalars a v) i))='(zero V).
+apply Trans with (min sum (omit (mult_by_scalars a v) i)); auto with algebra.
+assert
+ (mult_by_scalars a v i +' sum (omit (mult_by_scalars a v) i) =' 
+  (zero V) in _).
 
-(Apply Trans with (sum (mult_by_scalars a v));Auto with algebra).
-Apply Sym.
-Apply (seqsum_is_elt_plus_omitseq 2!(V::abelian_monoid) (mult_by_scalars a v)).
+apply Trans with (sum (mult_by_scalars a v)); auto with algebra.
+apply Sym.
+apply
+ (seqsum_is_elt_plus_omitseq (M:=V:abelian_monoid) (mult_by_scalars a v)).
 
-2:(Apply MODULE_comp;Auto with algebra).
-2:Apply Sym.
-2:(Apply FIELD_inverse_r;Auto with algebra).
+2: apply MODULE_comp; auto with algebra.
+2: apply Sym.
+2: apply FIELD_inverse_r; auto with algebra.
 
-Apply Sym.
-Apply GROUP_law_inverse.
-(Apply Trans with (sum (mult_by_scalars a v));Auto with algebra).
-(Apply Trans with ((mult_by_scalars a v) i)+'(sum (omit (mult_by_scalars a v) i));Auto with algebra).
-Apply Sym.
-(Apply (seqsum_is_elt_plus_omitseq 2!(V::abelian_monoid) (mult_by_scalars a v));Auto with algebra).
+apply Sym.
+apply GROUP_law_inverse.
+apply Trans with (sum (mult_by_scalars a v)); auto with algebra.
+apply
+ Trans with (mult_by_scalars a v i +' sum (omit (mult_by_scalars a v) i));
+ auto with algebra.
+apply Sym.
+apply
+ (seqsum_is_elt_plus_omitseq (M:=V:abelian_monoid) (mult_by_scalars a v));
+ auto with algebra.
 
-LetTac expr:=(field_inverse (a i))
-                mX (min (sum (omit (mult_by_scalars a v) i))).
+set (expr := field_inverse (a i) mX (min sum (omit (mult_by_scalars a v) i)))
+ in *.
 
-Cut one mX (v i) =' one mX expr.
-Intro.
-(Apply Trans with one mX expr;Auto with algebra).
-(Apply Trans with one mX (v i);Auto with algebra).
-Apply Trans with ((field_inverse (a i))rX(a i))mX(v i).
-(Apply MODULE_comp;Auto with algebra).
-Apply Sym.
-Auto with algebra.
-(Apply Trans with ((field_inverse (a i))rX(a i))mX expr;Auto with algebra).
-(Apply Trans with (field_inverse (a i))mX((a i)mX expr);Auto with algebra).
-(Apply Trans with (field_inverse (a i))mX((a i)mX (v i));Auto with algebra).
+cut (one mX v i =' one mX expr in _).
+intro.
+apply Trans with (one mX expr); auto with algebra.
+apply Trans with (one mX v i); auto with algebra.
+apply Trans with ((field_inverse (a i) rX a i) mX v i).
+apply MODULE_comp; auto with algebra.
+apply Sym.
+auto with algebra.
+apply Trans with ((field_inverse (a i) rX a i) mX expr); auto with algebra.
+apply Trans with (field_inverse (a i) mX a i mX expr); auto with algebra.
+apply Trans with (field_inverse (a i) mX a i mX v i); auto with algebra.
 Qed.
 
 (** - If $y\in W\cup\{x\}$ but $y\neq x$ then $y\in W$ *)
-Lemma another_small_lemma : (V:Setoid;W:(part_set V);x:V)
-  [Wx=(union W (single x))]
-    (y:Wx) ~(subtype_elt y)='x -> (in_part (subtype_elt y) W).
-Simpl.
-Intros.
-Generalize H;Elim y.
-Intros yv yp Hy.
-Simpl in yp.
-Simpl in Hy.
-Simpl.
-Unfold not in Hy.
-Case yp;Auto.
-Tauto.
+Lemma another_small_lemma :
+ forall (V : Setoid) (W : part_set V) (x : V),
+ let Wx := union W (single x) in
+ forall y : Wx, ~ subtype_elt y =' x in _ -> in_part (subtype_elt y) W.
+simpl in |- *.
+intros.
+generalize H; elim y.
+intros yv yp Hy.
+simpl in yp.
+simpl in Hy.
+simpl in |- *.
+unfold not in Hy.
+case yp; auto.
+tauto.
 Qed.
 
 (** - %\intoc{\bf Theorem 1.8}%: If $S\subset V$ is linearly independent and $x\not\in S$
  then $S\cup\{x\}$ is linearly dependent iff $x\in span(S)$
 
  (By the by - this innocent-looking lemma was extremely hard to prove) *)
-Lemma lin_dep_vs_span_lemma : (F:field;V:(vectorspace F);s:(part_set V))
-  (lin_indep s)->(x:V) ~(in_part x s) ->
-    ( (lin_dep (union s (single x))) <-> (in_part x (span s)) ).  
-Intros.
-LetTac Sx:=(union s (single x)).
-Split.
-Intro.
-Unfold lin_dep in H1.
-Elim H1;Clear H1;Intros.
-Elim H1;Clear H1;Intros.
-Elim H1;Clear H1;Intros.
-Elim H1;Clear H1;Intros.
-Elim H2;Clear H2;Intros.
-Generalize x0 x1 x2 H1 H2 H3.
-Clear H3 H2 H1 x2 x1 x0;Intros n a x' Hx' Ha Hlc.
-Assert ~(i:(fin (S n)))(in_part (Map_embed x' i) s).
-Red;Intro.
-Assert (EXT y:(seq (S n) s) | (Map_embed y)='(Map_embed x')).
-Unfold seq.
-(Apply subset_seq_castable;Auto with algebra).
-Inversion H2.
-Repeat Red in H;Apply H.
-Red.
-Exists n.
-Exists a.
-Exists x0.
-Split.
-Assert (distinct (Map_embed x')).
-(Apply Map_embed_preserves_distinct;Auto with algebra).
-Assert (distinct (Map_embed x0)).
-(Apply distinct_comp with (Map_embed x');Auto with algebra).
-(Apply Map_embed_reflects_distinct;Auto with algebra).
-Split.
-Auto.
-(Apply Trans with (sum (mult_by_scalars a (Map_embed x')));Auto with algebra).
-Assert (EXT i:(fin (S n)) | ~(in_part (Map_embed x' i) s)).
-Apply NNPP.
-Red;Red in H1.
-Intro;Apply H1.
-Intro.
-Red in H2.
-Apply NNPP.
-Red.
-Intro.
-Apply H2.
-Exists i;Auto.
-Elim H2;Intros.
-Generalize x0 H3;Clear H3 x0;Intros i Hi.
-Assert (in_part (Map_embed x' i) Sx).
-(Apply Map_embed_prop;Auto with algebra).
-Assert (in_part (Map_embed x' i) (single x)).
-(Apply union_not_in_l with s;Auto with algebra).
-Assert (Map_embed x' i)=' x.
-(Apply single_prop_rev;Auto with algebra).
-Cut ~(a i)='(zero F).
-Intro.
-Assert (Map_embed x' i)='((field_inverse (a i)) mX (min (sum (omit (mult_by_scalars a (Map_embed x'))::(seq??) i)))).
-(Apply rewrite_lin_comb_term;Auto with algebra).
-Assert (j:(fin n))(in_part ((omit (Map_embed x') i) j) s).
-Intro.
-Assert (distinct (Map_embed x')).
-(Apply Map_embed_preserves_distinct;Auto with algebra).
-Assert ~(omit (Map_embed x') i j)='(Map_embed x' i).
-(Apply distinct_omit_removes_all;Auto with algebra).
-Assert ~(omit (Map_embed x') i j)='x. 
-Red;Red in H9;Intro;Apply H9.
-(Apply Trans with x;Auto with algebra).
-Assert ~(in_part (omit (Map_embed x') i j) (single x)).
-Red;Red in H10;Intro;Apply H10.
-(Apply single_prop_rev;Auto with algebra).
-Assert (in_part (omit (Map_embed x') i j) Sx).
-(Apply in_part_comp_l with ((Map_embed (omit x' i)) j);Auto with algebra).
-(Apply Map_embed_prop;Auto with algebra).
-Assert (in_part (omit (Map_embed x') i j) (union (single x) s)).
-(Apply in_part_comp_r with Sx;Auto with algebra).
-Simpl.
-Red.
-Simpl.
-Split.
-Tauto.
-Tauto.
-(Apply union_not_in_l with (single x);Auto with algebra).
-Assert x =' (sum (mult_by_scalars (pointwise (uncurry (RING_comp 1!F)) (const_seq n (min (field_inverse (a i)))) (omit a i)) (omit (Map_embed x') i))).
-(Apply Trans with (Map_embed x' i);Auto with algebra).
-Cut ((field_inverse (a i))  mX (min (sum (omit (mult_by_scalars a (Map_embed x')) ::(seq (S n) V) i)))) =' (sum (mult_by_scalars (pointwise (uncurry (RING_comp 1!F)) (const_seq n (min (field_inverse (a i)))) (omit a i)) (omit (Map_embed x') i))).
-Intro.
-(Apply Trans with ((field_inverse (a i)) mX (min (sum (omit (mult_by_scalars a (Map_embed x')) i))));Auto with algebra).
-Apply Trans with (sum (mult_by_scalars (const_seq n (min (field_inverse (a i)))) (mult_by_scalars (omit a i)(omit (Map_embed x') i)))).
+Lemma lin_dep_vs_span_lemma :
+ forall (F : field) (V : vectorspace F) (s : part_set V),
+ lin_indep s ->
+ forall x : V,
+ ~ in_part x s -> (lin_dep (union s (single x)) <-> in_part x (span s)).  
+intros.
+set (Sx := union s (single x)) in *.
+split.
+intro.
+unfold lin_dep in H1.
+elim H1; clear H1; intros.
+elim H1; clear H1; intros.
+elim H1; clear H1; intros.
+elim H1; clear H1; intros.
+elim H2; clear H2; intros.
+generalize x0 x1 x2 H1 H2 H3.
+clear H3 H2 H1 x2 x1 x0; intros n a x' Hx' Ha Hlc.
+assert (~ (forall i : fin (S n), in_part (Map_embed x' i) s)).
+red in |- *; intro.
+assert (exists y : seq (S n) s, Map_embed y =' Map_embed x' in _).
+unfold seq in |- *.
+apply subset_seq_castable; auto with algebra.
+inversion H2.
+repeat red in H; apply H.
+red in |- *.
+exists n.
+exists a.
+exists x0.
+split.
+assert (distinct (Map_embed x')).
+apply Map_embed_preserves_distinct; auto with algebra.
+assert (distinct (Map_embed x0)).
+apply distinct_comp with (Map_embed x'); auto with algebra.
+apply Map_embed_reflects_distinct; auto with algebra.
+split.
+auto.
+apply Trans with (sum (mult_by_scalars a (Map_embed x'))); auto with algebra.
+assert (exists i : fin (S n), ~ in_part (Map_embed x' i) s).
+apply NNPP.
+red in |- *; red in H1.
+intro; apply H1.
+intro.
+red in H2.
+apply NNPP.
+red in |- *.
+intro.
+apply H2.
+exists i; auto.
+elim H2; intros.
+generalize x0 H3; clear H3 x0; intros i Hi.
+assert (in_part (Map_embed x' i) Sx).
+apply Map_embed_prop; auto with algebra.
+assert (in_part (Map_embed x' i) (single x)).
+apply union_not_in_l with s; auto with algebra.
+assert (Map_embed x' i =' x in _).
+apply single_prop_rev; auto with algebra.
+cut (~ a i =' (zero F) in _).
+intro.
+assert
+ (Map_embed x' i ='
+  field_inverse (a i)
+  mX (min sum (omit (mult_by_scalars a (Map_embed x'):seq _ _) i)) in _).
+apply rewrite_lin_comb_term; auto with algebra.
+assert (forall j : fin n, in_part (omit (Map_embed x') i j) s).
+intro.
+assert (distinct (Map_embed x')).
+apply Map_embed_preserves_distinct; auto with algebra.
+assert (~ omit (Map_embed x') i j =' Map_embed x' i in _).
+apply distinct_omit_removes_all; auto with algebra.
+assert (~ omit (Map_embed x') i j =' x in _). 
+red in |- *; red in H9; intro; apply H9.
+apply Trans with x; auto with algebra.
+assert (~ in_part (omit (Map_embed x') i j) (single x)).
+red in |- *; red in H10; intro; apply H10.
+apply single_prop_rev; auto with algebra.
+assert (in_part (omit (Map_embed x') i j) Sx).
+apply in_part_comp_l with (Map_embed (omit x' i) j); auto with algebra.
+apply Map_embed_prop; auto with algebra.
+assert (in_part (omit (Map_embed x') i j) (union (single x) s)).
+apply in_part_comp_r with Sx; auto with algebra.
+simpl in |- *.
+red in |- *.
+simpl in |- *.
+split.
+tauto.
+tauto.
+apply union_not_in_l with (single x); auto with algebra.
+assert
+ (x ='
+  sum
+    (mult_by_scalars
+       (pointwise (uncurry (RING_comp (R:=F)))
+          (const_seq n (min field_inverse (a i))) (omit a i))
+       (omit (Map_embed x') i)) in _).
+apply Trans with (Map_embed x' i); auto with algebra.
+cut
+ (field_inverse (a i)
+  mX (min sum (omit (mult_by_scalars a (Map_embed x'):seq (S n) V) i)) ='
+  sum
+    (mult_by_scalars
+       (pointwise (uncurry (RING_comp (R:=F)))
+          (const_seq n (min field_inverse (a i))) (omit a i))
+       (omit (Map_embed x') i)) in _).
+intro.
+apply
+ Trans
+  with
+    (field_inverse (a i)
+     mX (min sum (omit (mult_by_scalars a (Map_embed x')) i)));
+ auto with algebra.
+apply
+ Trans
+  with
+    (sum
+       (mult_by_scalars (const_seq n (min field_inverse (a i)))
+          (mult_by_scalars (omit a i) (omit (Map_embed x') i)))).
 
-2:(Apply sum_comp;Auto with algebra).
-(Apply Trans with (min (field_inverse (a i))) mX (sum (mult_by_scalars (omit a i) (omit (Map_embed x') i)));Auto with algebra).
-(Apply Sym;Auto with algebra).
-(Apply Trans with ((min (field_inverse (a i))) mX (sum(omit (mult_by_scalars a (Map_embed x')) i)));Auto with algebra).
-Assert (EXT y:(seq n s) | (Map_embed y)='(omit (Map_embed x') i)).
-Unfold seq.
-(Apply seq_castable;Auto with algebra).
-Elim H10;Intros.
-Assert  x =' (sum (mult_by_scalars (pointwise (uncurry (RING_comp 1!F)) (const_seq n (min (field_inverse (a i)))) (omit a i)) (Map_embed x0))).
-(Apply Trans with (sum (mult_by_scalars (pointwise (uncurry (RING_comp 1!F))(const_seq n (min (field_inverse (a i)))) (omit a i)) (omit (Map_embed x') i)));Auto with algebra).
-Simpl.
-Red.
-Exists n.
-Exists (pointwise (uncurry (RING_comp 1!F)) (const_seq n (min (field_inverse (a i)))) (omit a i)).
-Exists x0.
-Auto.
+2: apply sum_comp; auto with algebra.
+apply
+ Trans
+  with
+    ((min field_inverse (a i))
+     mX sum (mult_by_scalars (omit a i) (omit (Map_embed x') i)));
+ auto with algebra.
+apply Sym; auto with algebra.
+apply
+ Trans
+  with
+    ((min field_inverse (a i))
+     mX sum (omit (mult_by_scalars a (Map_embed x')) i)); 
+ auto with algebra.
+assert (exists y : seq n s, Map_embed y =' omit (Map_embed x') i in _).
+unfold seq in |- *.
+apply seq_castable; auto with algebra.
+elim H10; intros.
+assert
+ (x ='
+  sum
+    (mult_by_scalars
+       (pointwise (uncurry (RING_comp (R:=F)))
+          (const_seq n (min field_inverse (a i))) (omit a i)) 
+       (Map_embed x0)) in _).
+apply
+ Trans
+  with
+    (sum
+       (mult_by_scalars
+          (pointwise (uncurry (RING_comp (R:=F)))
+             (const_seq n (min field_inverse (a i))) 
+             (omit a i)) (omit (Map_embed x') i))); 
+ auto with algebra.
+simpl in |- *.
+red in |- *.
+exists n.
+exists
+ (pointwise (uncurry (RING_comp (R:=F)))
+    (const_seq n (min field_inverse (a i))) (omit a i)).
+exists x0.
+auto.
 
-Generalize a x' Hx' Ha Hlc i H5; Clear H5 H4 H3 Hi i H2 H1 Hlc Ha Hx' x' a;Case n.
-Intros.
-Red;Red in Ha;Intro;Apply Ha.
-Assert (head a)='(zero F).
-(Apply Trans with (a i);Auto with algebra).
-(Apply Sym;Auto with algebra).
+generalize a x' Hx' Ha Hlc i H5; clear H5 H4 H3 Hi i H2 H1 Hlc Ha Hx' x' a;
+ case n.
+intros.
+red in |- *; red in Ha; intro; apply Ha.
+assert (head a =' (zero F) in _).
+apply Trans with (a i); auto with algebra.
+apply Sym; auto with algebra.
 
-Intros.
-Red;Intro.
-Assert (sum (mult_by_scalars (omit a i) (omit (Map_embed x') i))) =' (zero V).
-(Apply Trans with (sum (omit (mult_by_scalars a (Map_embed x')) i));Auto with algebra).
-(Apply Trans with (sum (mult_by_scalars a (Map_embed x')));Auto with algebra).
-Apply Sym.
-(Apply sum_omit_zeros;Auto with algebra).
-Simpl.
-(Apply Trans with (zero F) mX (subtype_elt (x' i));Auto with algebra).
-Assert (EXT y:(seq (S n0) s) | (Map_embed y)='(omit (Map_embed x') i)).
+intros.
+red in |- *; intro.
+assert
+ (sum (mult_by_scalars (omit a i) (omit (Map_embed x') i)) =' (zero V) in _).
+apply Trans with (sum (omit (mult_by_scalars a (Map_embed x')) i));
+ auto with algebra.
+apply Trans with (sum (mult_by_scalars a (Map_embed x'))); auto with algebra.
+apply Sym.
+apply sum_omit_zeros; auto with algebra.
+simpl in |- *.
+apply Trans with ((zero F) mX subtype_elt (x' i)); auto with algebra.
+assert (exists y : seq (S n0) s, Map_embed y =' omit (Map_embed x') i in _).
 (* copy'n'paste *)
-Assert (j:(fin (S n0)))(in_part ((omit (Map_embed x') i) j) s).
-Intro.
-Assert (distinct (Map_embed x')).
-(Apply Map_embed_preserves_distinct;Auto with algebra).
-Assert ~(omit (Map_embed x') i j)='(Map_embed x' i).
-(Apply distinct_omit_removes_all;Auto with algebra).
-Assert ~(omit (Map_embed x') i j)='x. 
-Red;Red in H4;Intro;Apply H4.
-(Apply Trans with x;Auto with algebra).
-Assert ~(in_part (omit (Map_embed x') i j) (single x)).
-Red;Red in H6;Intro;Apply H6.
-(Apply single_prop_rev;Auto with algebra).
-Assert (in_part (omit (Map_embed x') i j) Sx).
-(Apply in_part_comp_l with ((Map_embed (omit x' i)) j);Auto with algebra).
-(Apply Map_embed_prop;Auto with algebra).
-Assert (in_part (omit (Map_embed x') i j) (union (single x) s)).
-(Apply in_part_comp_r with Sx;Auto with algebra).
-Simpl.
-Red.
-Simpl.
-Split.
-Tauto.
-Tauto.
-(Apply union_not_in_l with (single x);Auto with algebra).
-Unfold seq.
-(Apply seq_castable;Auto with algebra).
-Elim H3;Intros.
-Assert (sum (mult_by_scalars (omit a i) (Map_embed x0)))='(zero V).
-(Apply Trans with (sum (mult_by_scalars (omit a i) (omit (Map_embed x') i)));Auto with algebra).
-Red in H.
-Red in H.
-(Apply H;Auto with algebra).
-Red.
-Exists n0.
-Exists (omit a i).
-Exists x0.
-Split.
-(Apply Map_embed_reflects_distinct;Auto with algebra).
-(Apply distinct_comp with (omit (Map_embed x') i);Auto with algebra).
-(Apply (omit_preserves_distinct 3! (Map_embed x'));Auto with algebra).
-Split.
-Red;Red in Ha;Intro;Apply Ha.
-2:Auto.
-Clear H6 H4 x0 H3 H2 H5 Hlc Hx' x' n Sx H0 x H s V.
-Simpl;Red.
-Simpl.
-Intro j.
-Elim (fin_decidable i j).
-Intro.
-(Apply Trans with (a i);Auto with algebra).
-Change (Map_eq (omit a i) (const_seq (S n0) (zero F))) in H7.
-Red in H7.
-Intro.
-Generalize omit_removes'.
-Intro p.
-Case (p??a??H).
-Intros.
-(Apply Trans with (omit a i x);Auto with algebra).
-(Apply Trans with (const_seq (S n0) (zero F) x);Auto with algebra).
+assert (forall j : fin (S n0), in_part (omit (Map_embed x') i j) s).
+intro.
+assert (distinct (Map_embed x')).
+apply Map_embed_preserves_distinct; auto with algebra.
+assert (~ omit (Map_embed x') i j =' Map_embed x' i in _).
+apply distinct_omit_removes_all; auto with algebra.
+assert (~ omit (Map_embed x') i j =' x in _). 
+red in |- *; red in H4; intro; apply H4.
+apply Trans with x; auto with algebra.
+assert (~ in_part (omit (Map_embed x') i j) (single x)).
+red in |- *; red in H6; intro; apply H6.
+apply single_prop_rev; auto with algebra.
+assert (in_part (omit (Map_embed x') i j) Sx).
+apply in_part_comp_l with (Map_embed (omit x' i) j); auto with algebra.
+apply Map_embed_prop; auto with algebra.
+assert (in_part (omit (Map_embed x') i j) (union (single x) s)).
+apply in_part_comp_r with Sx; auto with algebra.
+simpl in |- *.
+red in |- *.
+simpl in |- *.
+split.
+tauto.
+tauto.
+apply union_not_in_l with (single x); auto with algebra.
+unfold seq in |- *.
+apply seq_castable; auto with algebra.
+elim H3; intros.
+assert (sum (mult_by_scalars (omit a i) (Map_embed x0)) =' (zero V) in _).
+apply Trans with (sum (mult_by_scalars (omit a i) (omit (Map_embed x') i)));
+ auto with algebra.
+red in H.
+red in H.
+apply H; auto with algebra.
+red in |- *.
+exists n0.
+exists (omit a i).
+exists x0.
+split.
+apply Map_embed_reflects_distinct; auto with algebra.
+apply distinct_comp with (omit (Map_embed x') i); auto with algebra.
+apply (omit_preserves_distinct (v:=Map_embed x')); auto with algebra.
+split.
+red in |- *; red in Ha; intro; apply Ha.
+2: auto.
+clear H6 H4 x0 H3 H2 H5 Hlc Hx' x' n Sx H0 x H s V.
+simpl in |- *; red in |- *.
+simpl in |- *.
+intro j.
+elim (fin_decidable i j).
+intro.
+apply Trans with (a i); auto with algebra.
+change (Map_eq (omit a i) (const_seq (S n0) (zero F))) in H7.
+red in H7.
+intro.
+generalize omit_removes'.
+intro p.
+case (p _ _ a _ _ H).
+intros.
+apply Trans with (omit a i x); auto with algebra.
+apply Trans with (const_seq (S n0) (zero F) x); auto with algebra.
 (* My gods that was painful *)
 
 (* Now the other direction *)
-Intro.
-Simpl in H1.
-Generalize (lin_comb_with_distinct_vectors H1).
-Clear H1.
-Intro H1.
-Elim H1;Clear H1;Intros.
-Elim H1;Clear H1;Intros.
-Elim H1;Clear H1;Intros.
-Elim H1;Clear H1;Intros.
-Rename H2 into Dx2.
-Assert (EXT v:(seq x0 Sx) | (Map_embed v)='(Map_embed x2)).
-Unfold seq.
-(Apply subset_seq_castable;Auto with algebra).
-Intro.
-Assert (in_part (Map_embed x2 i) s).
-(Apply Map_embed_prop;Auto with algebra).
-Unfold Sx.
-(Apply in_part_union_l;Auto with algebra).
-Elim H2;Clear H2;Intros.
-Assert x=' (sum (mult_by_scalars x1 (Map_embed x3))).
-(Apply Trans with (sum (mult_by_scalars x1 (Map_embed x2)));Auto with algebra).
-Assert (EXT x':Sx | (Sx x')='x).
-Simpl.
-Assert (in_part x Sx).
-Simpl.
-Right;Auto with algebra.
-Assert (Pred_fun Sx x);Auto with algebra.
-Exists (Build_subtype H5).
-Simpl.
-Auto with algebra.
-Elim H4;Clear H4;Intros.
-Assert (sum (mult_by_scalars (min one);;x1 (Map_embed (x4;;x3))))=' (zero V).
-Apply Trans with (sum (mult_by_scalars ((min one);;x1) (Sx x4);;(Map_embed x3))).
-(Apply sum_comp;Auto with algebra).
-Unfold mult_by_scalars.
-Apply Trans with (sum (uncurry (MODULE_comp 2!V) (couple (min one) (Sx x4)));;(mult_by_scalars x1 (Map_embed x3))).
-Unfold mult_by_scalars.
-(Apply sum_comp;Auto with algebra).
-(Apply Trans with (uncurry (MODULE_comp 1!F 2!V) (couple (min one) (Sx x4))) +' (sum (mult_by_scalars x1 (Map_embed x3)));Auto with algebra).
-Simpl.
-(Apply Trans with (min (one mX (Sx x4))) +' (sum (mult_by_scalars x1 (Map_embed x3)));Auto with algebra).
-(Apply Trans with (min (one mX (Sx x4))) +' x;Auto with algebra).
-(Apply Trans with (min (Sx x4))+' x;Auto with algebra).
-(Apply Trans with (min x) +' x;Auto with algebra).
-Red.
-Exists x0.
-Exists (min one);;x1.
-Exists x4;;x3.
-Split.
-Red.
+intro.
+simpl in H1.
+generalize (lin_comb_with_distinct_vectors H1).
+clear H1.
+intro H1.
+elim H1; clear H1; intros.
+elim H1; clear H1; intros.
+elim H1; clear H1; intros.
+elim H1; clear H1; intros.
+rename H2 into Dx2.
+assert (exists v : seq x0 Sx, Map_embed v =' Map_embed x2 in _).
+unfold seq in |- *.
+apply subset_seq_castable; auto with algebra.
+intro.
+assert (in_part (Map_embed x2 i) s).
+apply Map_embed_prop; auto with algebra.
+unfold Sx in |- *.
+apply in_part_union_l; auto with algebra.
+elim H2; clear H2; intros.
+assert (x =' sum (mult_by_scalars x1 (Map_embed x3)) in _).
+apply Trans with (sum (mult_by_scalars x1 (Map_embed x2))); auto with algebra.
+assert (exists x' : Sx, Sx x' =' x in _).
+simpl in |- *.
+assert (in_part x Sx).
+simpl in |- *.
+right; auto with algebra.
+assert (Pred_fun Sx x); auto with algebra.
+exists (Build_subtype H5).
+simpl in |- *.
+auto with algebra.
+elim H4; clear H4; intros.
+assert
+ (sum (mult_by_scalars ((min one);; x1) (Map_embed (x4;; x3))) =' 
+  (zero V) in _).
+apply
+ Trans with (sum (mult_by_scalars ((min one);; x1) (Sx x4;; Map_embed x3))).
+apply sum_comp; auto with algebra.
+unfold mult_by_scalars in |- *.
+apply
+ Trans
+  with
+    (sum
+       (uncurry (MODULE_comp (Mod:=V)) (couple (min one) (Sx x4));;
+        mult_by_scalars x1 (Map_embed x3))).
+unfold mult_by_scalars in |- *.
+apply sum_comp; auto with algebra.
+apply
+ Trans
+  with
+    (uncurry (MODULE_comp (R:=F) (Mod:=V)) (couple (min one) (Sx x4)) +'
+     sum (mult_by_scalars x1 (Map_embed x3))); auto with algebra.
+simpl in |- *.
+apply
+ Trans with ((min one mX Sx x4) +' sum (mult_by_scalars x1 (Map_embed x3)));
+ auto with algebra.
+apply Trans with ((min one mX Sx x4) +' x); auto with algebra.
+apply Trans with ((min Sx x4) +' x); auto with algebra.
+apply Trans with ((min x) +' x); auto with algebra.
+red in |- *.
+exists x0.
+exists ((min one);; x1).
+exists (x4;; x3).
+split.
+red in |- *.
 
-Assert (distinct x3).
-Apply Map_embed_reflects_distinct.
-(Apply distinct_comp with (Map_embed x2);Auto with algebra).
-Intros i j;Case i;Case j.
-Intros ni Hi nj Hj;Generalize Hi Hj;Clear Hj Hi;Case ni;Case nj.
-Simpl.
-Intros;Absurd O=O;Auto.
-3:Intros.
-3:Simpl.
-3:Red in H6.
-3:Simpl in H6.
-3:(Apply H6;Auto with algebra).
-Simpl.
-Intros.
-Change ~(x3 (Build_finiteT (lt_S_n??Hj)))='x4.
-Red;Intro.
-Assert (in_part (Sx (x3 (Build_finiteT (lt_S_n??Hj)))) s).
-(Apply in_part_comp_l with ((Map_embed x3) (Build_finiteT (lt_S_n??Hj)));Auto with algebra).
-(Apply in_part_comp_l with ((Map_embed x2) (Build_finiteT (lt_S_n??Hj)));Auto with algebra).
-(Apply Map_embed_prop;Auto with algebra).
-Assert ~(in_part (Sx x4) s).
-Red;Intro.
-Assert (in_part x s).
-(Apply in_part_comp_l with (Sx x4);Auto with algebra).
-Absurd (in_part x s);Auto.
-Red in H10;(Apply H10;Auto with algebra).
-(Apply in_part_comp_l with (Sx (x3 (Build_finiteT (lt_S_n??Hj))));Auto with algebra).
-Simpl.
-Intros.
-Change ~x4='(x3 (Build_finiteT (lt_S_n??Hi))).
-Red;Intro.
-Assert (in_part (Sx (x3 (Build_finiteT (lt_S_n??Hi)))) s).
-(Apply in_part_comp_l with ((Map_embed x3) (Build_finiteT (lt_S_n??Hi)));Auto with algebra).
-(Apply in_part_comp_l with ((Map_embed x2) (Build_finiteT (lt_S_n??Hi)));Auto with algebra).
-(Apply Map_embed_prop;Auto with algebra).
-Assert ~(in_part (Sx x4) s).
-Red;Intro.
-Assert (in_part x s).
-(Apply in_part_comp_l with (Sx x4);Auto with algebra).
-Absurd (in_part x s);Auto.
-Red in H10;(Apply H10;Auto with algebra).
-(Apply in_part_comp_l with (Sx (x3 (Build_finiteT (lt_S_n??Hi))));Auto with algebra).
+assert (distinct x3).
+apply Map_embed_reflects_distinct.
+apply distinct_comp with (Map_embed x2); auto with algebra.
+intros i j; case i; case j.
+intros ni Hi nj Hj; generalize Hi Hj; clear Hj Hi; case ni; case nj.
+simpl in |- *.
+intros; absurd (0 = 0); auto.
+3: intros.
+3: simpl in |- *.
+3: red in H6.
+3: simpl in H6.
+3: apply H6; auto with algebra.
+simpl in |- *.
+intros.
+change (~ x3 (Build_finiteT (lt_S_n _ _ Hj)) =' x4 in _) in |- *.
+red in |- *; intro.
+assert (in_part (Sx (x3 (Build_finiteT (lt_S_n _ _ Hj)))) s).
+apply in_part_comp_l with (Map_embed x3 (Build_finiteT (lt_S_n _ _ Hj)));
+ auto with algebra.
+apply in_part_comp_l with (Map_embed x2 (Build_finiteT (lt_S_n _ _ Hj)));
+ auto with algebra.
+apply Map_embed_prop; auto with algebra.
+assert (~ in_part (Sx x4) s).
+red in |- *; intro.
+assert (in_part x s).
+apply in_part_comp_l with (Sx x4); auto with algebra.
+absurd (in_part x s); auto.
+red in H10; (apply H10; auto with algebra).
+apply in_part_comp_l with (Sx (x3 (Build_finiteT (lt_S_n _ _ Hj))));
+ auto with algebra.
+simpl in |- *.
+intros.
+change (~ x4 =' x3 (Build_finiteT (lt_S_n _ _ Hi)) in _) in |- *.
+red in |- *; intro.
+assert (in_part (Sx (x3 (Build_finiteT (lt_S_n _ _ Hi)))) s).
+apply in_part_comp_l with (Map_embed x3 (Build_finiteT (lt_S_n _ _ Hi)));
+ auto with algebra.
+apply in_part_comp_l with (Map_embed x2 (Build_finiteT (lt_S_n _ _ Hi)));
+ auto with algebra.
+apply Map_embed_prop; auto with algebra.
+assert (~ in_part (Sx x4) s).
+red in |- *; intro.
+assert (in_part x s).
+apply in_part_comp_l with (Sx x4); auto with algebra.
+absurd (in_part x s); auto.
+red in H10; (apply H10; auto with algebra).
+apply in_part_comp_l with (Sx (x3 (Build_finiteT (lt_S_n _ _ Hi))));
+ auto with algebra.
 
-Split.
-Simpl.
-Red;Intro.
-Red in H6.
-Generalize (H6 (Build_finiteT (lt_O_Sn x0))).
-Simpl.
-Intro.
-Absurd one='(zero F);Auto with algebra.
-(Apply Trans with (min (zero F));Auto with algebra).
-(Apply Trans with ((min (min one))::F);Auto with algebra).
-Auto.
+split.
+simpl in |- *.
+red in |- *; intro.
+red in H6.
+generalize (H6 (Build_finiteT (lt_O_Sn x0))).
+simpl in |- *.
+intro.
+absurd (one =' (zero F) in _); auto with algebra.
+apply Trans with (min (zero F)); auto with algebra.
+apply Trans with ((min (min one)):F); auto with algebra.
+auto.
 Qed.
 
 (** - Remember how max_lin_dep was defined with respect to arbitrary sets instead of
  just subspaces. So (max_lin_indep W' W) need not mean span(W')=W *)
 
 Lemma max_lin_indep_subset_generates_set :
-  (F:field;V:(vectorspace F);W,W':(part_set V))
-    (max_lin_indep W' W) -> (w:W)(is_lin_comb (subtype_elt w) W').
-Intros.
-Red in H.
-Elim H;Clear H;Intros.
-Elim H0;Clear H0;Intros.
-Case (classic (in_part (subtype_elt w) W')).
-Intro;Red.
-Exists (1).
-Exists (!const_seq F (1) one).
-Exists (!const_seq W' (1) (Build_subtype H2)).
-Simpl.
-(Apply Trans with (one mX (subtype_elt w));Auto with algebra).
-Intro.
-Generalize (!lin_dep_vs_span_lemma F V W').
-Intros.
-Generalize (H3 H0 (subtype_elt w) H2).
-Intro.
-Clear H3;Inversion_clear H4.
-(Apply H3;Auto with algebra).
+ forall (F : field) (V : vectorspace F) (W W' : part_set V),
+ max_lin_indep W' W -> forall w : W, is_lin_comb (subtype_elt w) W'.
+intros.
+red in H.
+elim H; clear H; intros.
+elim H0; clear H0; intros.
+case (classic (in_part (subtype_elt w) W')).
+intro; red in |- *.
+exists 1.
+exists (const_seq (A:=F) 1 one).
+exists (const_seq (A:=W') 1 (Build_subtype H2)).
+simpl in |- *.
+apply Trans with (one mX subtype_elt w); auto with algebra.
+intro.
+generalize (lin_dep_vs_span_lemma (F:=F) (V:=V) (s:=W')).
+intros.
+generalize (H3 H0 (subtype_elt w) H2).
+intro.
+clear H3; inversion_clear H4.
+apply H3; auto with algebra.
 Qed.
 
 (** - But of course we do have span(W')=span(W): *)
 Lemma max_lin_indep_subset_has_same_span :
-  (F:field;V:(vectorspace F);W,W':(part_set V))
-    (max_lin_indep W' W) -> (span W)='(span W') in (part_set V).
-Intros.
-Simpl.
-Red.
-Simpl.
-Split;Intros.
-(Apply lin_comb_casting with W;Auto with algebra).
-(Apply max_lin_indep_subset_generates_set;Auto with algebra).
-Red in H.
-Inversion_clear H.
-Assert (included (span W') (span W)).
-(Apply span_preserves_inclusion;Auto with algebra).
-Change (in_part x (span W)).
-Change (in_part x (span W')) in H0.
-Red in H.
-(Apply H;Auto with algebra).
+ forall (F : field) (V : vectorspace F) (W W' : part_set V),
+ max_lin_indep W' W -> span W =' span W' in part_set V.
+intros.
+simpl in |- *.
+red in |- *.
+simpl in |- *.
+split; intros.
+apply lin_comb_casting with W; auto with algebra.
+apply max_lin_indep_subset_generates_set; auto with algebra.
+red in H.
+inversion_clear H.
+assert (included (span W') (span W)).
+apply span_preserves_inclusion; auto with algebra.
+change (in_part x (span W)) in |- *.
+change (in_part x (span W')) in H0.
+red in H.
+apply H; auto with algebra.
 Qed.
 
 (** - The seq_set in this lemma is needed to transform seqs into sets: *)
-Lemma seq_has_max_lin_indep_subseq : (F:field;V:(vectorspace F);n:Nat;v:(seq n V)) 
-  (EXT k:Nat | (EXT w:(seq k V) | 
-    (is_subseq w v) /\ (max_lin_indep (seq_set w) (seq_set v)))).
-Induction n.
-Intro.
-Exists O.
-Exists v.
-Split.
-EApply is_subseq_comp.
-(Apply is_subseq_empty;Auto with algebra).
-Auto with algebra.
-Apply Refl.
-Split.
-Auto with algebra.
-Split.
-(Apply lin_indep_comp with (seq_set (empty_seq V));Auto with algebra).
+Lemma seq_has_max_lin_indep_subseq :
+ forall (F : field) (V : vectorspace F) (n : Nat) (v : seq n V),
+ exists k : Nat,
+   (exists w : seq k V,
+      is_subseq w v /\ max_lin_indep (seq_set w) (seq_set v)).
+simple induction n.
+intro.
+exists 0.
+exists v.
+split.
+eapply is_subseq_comp.
+apply is_subseq_empty; auto with algebra.
+auto with algebra.
+apply Refl.
+split.
+auto with algebra.
+split.
+apply lin_indep_comp with (seq_set (empty_seq V)); auto with algebra.
 
-(Apply lin_indep_comp with (empty V);Auto with algebra).
-(Apply empty_lin_indep;Auto with algebra).
-Intros;(Apply False_ind;Auto with algebra).
+apply lin_indep_comp with (empty V); auto with algebra.
+apply empty_lin_indep; auto with algebra.
+intros; (apply False_ind; auto with algebra).
 
-Clear n.
-Intros.
-Generalize (H (Seqtl v)).
-Intro.
-Clear H.
-Inversion_clear H0.
-Inversion_clear H.
-Inversion_clear H0.
-Assert (lin_dep (seq_set (head v);;x0))\/(lin_indep (seq_set (head v);;x0)).
-Unfold lin_indep.
-(Apply classic;Auto with algebra).
-Case H0;Clear H0.
-Intro.
-Exists x.
-Exists x0.
-Split.
-(Apply is_subseq_comp with x0 (hdtl v);Auto with algebra);Unfold hdtl.
-(Apply is_subseq_of_tail;Auto with algebra).
-Split.
-Inversion_clear H1.
-Red in H2.
-Red;Intros.
-Generalize (H2 x1 H1);Clear H2;Intro;Simpl in H2.
-Inversion_clear H2.
-NewDestruct x2.
-Simpl.
-Exists (Build_finiteT (lt_n_S index n in_range_prf)).
-Auto.
-Split.
-Inversion_clear H1.
-Inversion_clear H3.
-(Apply H1;Auto with algebra).
-Intro.
-Intro.
-Case (classic y='(head v)).
-Intros.
-(Apply lin_dep_comp with (seq_set (y;;x0));Auto with algebra).
-(Apply lin_dep_comp with (seq_set ((head v);;x0));Auto with algebra).
-Intros.
-Assert (in_part y (seq_set (Seqtl v))).
-Auto with algebra.
-Inversion_clear H1.
-Inversion_clear H7.
-(Apply H8;Auto with algebra).
+clear n.
+intros.
+generalize (H (Seqtl v)).
+intro.
+clear H.
+inversion_clear H0.
+inversion_clear H.
+inversion_clear H0.
+assert (lin_dep (seq_set (head v;; x0)) \/ lin_indep (seq_set (head v;; x0))).
+unfold lin_indep in |- *.
+apply classic; auto with algebra.
+case H0; clear H0.
+intro.
+exists x.
+exists x0.
+split.
+apply is_subseq_comp with x0 (hdtl v); auto with algebra; unfold hdtl in |- *.
+apply is_subseq_of_tail; auto with algebra.
+split.
+inversion_clear H1.
+red in H2.
+red in |- *; intros.
+generalize (H2 x1 H1); clear H2; intro; simpl in H2.
+inversion_clear H2.
+destruct x2.
+simpl in |- *.
+exists (Build_finiteT (lt_n_S index n in_range_prf)).
+auto.
+split.
+inversion_clear H1.
+inversion_clear H3.
+apply H1; auto with algebra.
+intro.
+intro.
+case (classic (y =' head v in _)).
+intros.
+apply lin_dep_comp with (seq_set (y;; x0)); auto with algebra.
+apply lin_dep_comp with (seq_set (head v;; x0)); auto with algebra.
+intros.
+assert (in_part y (seq_set (Seqtl v))).
+auto with algebra.
+inversion_clear H1.
+inversion_clear H7.
+apply H8; auto with algebra.
 
-Intro.
-Exists (S x).
-Exists (head v);;x0.
-Split;Try Split.
-(Apply is_subseq_comp with ((head v);;x0) (hdtl v);Auto with algebra).
-Unfold hdtl.
-(Apply is_subseq_cons;Auto with algebra).
-Red.
-Intros.
-Simpl in H2.
-Inversion_clear H2.
-NewDestruct x2.
-NewDestruct index.
-Simpl.
-Exists (Build_finiteT (lt_O_Sn n)).
-(Apply Trans with (head v);Auto with algebra).
-Generalize (subseq_has_right_elements H (Build_finiteT (lt_S_n n0 x in_range_prf))).
-Intro.
-Inversion_clear H2.
-Simpl.
-NewDestruct x2.
-Exists (Build_finiteT (lt_n_S??in_range_prf0)).
-(Apply Trans with (x0 (Build_finiteT (lt_S_n n0 x in_range_prf)));Auto with algebra).
-Split.
-Auto.
-Intro.
-Case (classic y='(head v)).
-Intros.
-Absurd (in_part y (seq_set ((head v);;x0)));Auto.
-Simpl.
-Exists (Build_finiteT (lt_O_Sn x)).
-Auto.
-Intros.
-Inversion_clear H1.
-(Apply lin_dep_include with (union (seq_set x0) (single y));Auto with algebra).
-Red.
-Intros.
-Simpl in H1.
-Simpl.
-Inversion_clear H1.
-Inversion_clear H7.
-NewDestruct x2.
-Left.
-Exists (Build_finiteT (lt_n_S ?? in_range_prf)).
-(Apply Trans with (x0 (Build_finiteT in_range_prf));Auto with algebra);(Apply Ap_comp;Auto with algebra);Simpl;Auto.
-Right;Auto.
-Inversion_clear H6.
-(Apply H7;Auto with algebra).
-Change  (in_part y (seq_set (Seqtl v))).
-(Apply seq_set_head_or_tail;Auto with algebra). 
-Red;Red in H4;Intro;(Apply H4;Auto with algebra).
-(Apply in_part_included with (seq_set x0);Auto with algebra).
-Red.
-Simpl.
-Intros.
-Inversion_clear H8.
-NewDestruct x2.
-Exists (Build_finiteT (lt_n_S??in_range_prf)).
-(Apply Trans with (x0 (Build_finiteT in_range_prf));Auto with algebra);(Apply Ap_comp;Auto with algebra);Simpl;Auto.
+intro.
+exists (S x).
+exists (head v;; x0).
+split; try split.
+apply is_subseq_comp with (head v;; x0) (hdtl v); auto with algebra.
+unfold hdtl in |- *.
+apply is_subseq_cons; auto with algebra.
+red in |- *.
+intros.
+simpl in H2.
+inversion_clear H2.
+destruct x2.
+destruct index as [| n0].
+simpl in |- *.
+exists (Build_finiteT (lt_O_Sn n)).
+apply Trans with (head v); auto with algebra.
+generalize
+ (subseq_has_right_elements H (Build_finiteT (lt_S_n n0 x in_range_prf))).
+intro.
+inversion_clear H2.
+simpl in |- *.
+destruct x2.
+exists (Build_finiteT (lt_n_S _ _ in_range_prf0)).
+apply Trans with (x0 (Build_finiteT (lt_S_n n0 x in_range_prf)));
+ auto with algebra.
+split.
+auto.
+intro.
+case (classic (y =' head v in _)).
+intros.
+absurd (in_part y (seq_set (head v;; x0))); auto.
+simpl in |- *.
+exists (Build_finiteT (lt_O_Sn x)).
+auto.
+intros.
+inversion_clear H1.
+apply lin_dep_include with (union (seq_set x0) (single y)); auto with algebra.
+red in |- *.
+intros.
+simpl in H1.
+simpl in |- *.
+inversion_clear H1.
+inversion_clear H7.
+destruct x2.
+left.
+exists (Build_finiteT (lt_n_S _ _ in_range_prf)).
+apply Trans with (x0 (Build_finiteT in_range_prf)); auto with algebra;
+ (apply Ap_comp; auto with algebra); simpl in |- *; 
+ auto.
+right; auto.
+inversion_clear H6.
+apply H7; auto with algebra.
+change (in_part y (seq_set (Seqtl v))) in |- *.
+apply seq_set_head_or_tail; auto with algebra. 
+red in |- *; red in H4; intro; (apply H4; auto with algebra).
+apply in_part_included with (seq_set x0); auto with algebra.
+red in |- *.
+simpl in |- *.
+intros.
+inversion_clear H8.
+destruct x2.
+exists (Build_finiteT (lt_n_S _ _ in_range_prf)).
+apply Trans with (x0 (Build_finiteT in_range_prf)); auto with algebra;
+ (apply Ap_comp; auto with algebra); simpl in |- *; 
+ auto.
 Qed.
