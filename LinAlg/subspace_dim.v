@@ -76,7 +76,9 @@ apply
 apply
  Trans with (c mX subtype_elt (span_ind_injection (span_ind_uninject x1)));
  abstract auto with algebra.
+Set Virtual Machine.
 Time Qed.
+Unset Virtual Machine.
 
 Section prelim.
 Variable F : field.

@@ -140,7 +140,9 @@ apply MODULE_comp; auto with algebra.
 simpl in |- *.
 apply Refl.
 simpl in |- *; apply Refl.
+Set Virtual Machine.
 Qed.
+Unset Virtual Machine.
 
 Lemma bases_equal_then_subspace_equal :
  forall (F : field) (V : vectorspace F) (W1 W2 : subspace V) 
