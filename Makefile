@@ -296,7 +296,7 @@ include .depend
 
 install:
 	mkdir -p `$(COQC) -where`/user-contrib
-	cp -f *.vo `$(COQC) -where`/user-contrib
+	cp -f $(VOFILES) `$(COQC) -where`/user-contrib
 
 Makefile: Make
 	mv -f Makefile Makefile.bak
@@ -304,7 +304,7 @@ Makefile: Make
 
 
 clean:
-	rm -f *.cmo *.cmi *.cmx *.o *.vo *.vi *.g *~
+	rm -f *.cmo *.cmi *.cmx *.o $(VOFILES) $(VIFILES) $(GFILES) *~
 	rm -f all.ps all-gal.ps $(HTMLFILES) $(GHTMLFILES)
 
 archclean:
