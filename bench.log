@@ -309,3 +309,6 @@ Fri 19/11/2004 02:00: Success (user = 5295.14s system = 16.18s size = 1260308 to
 Sat 20/11/2004 02:00: Success (user = 5247.68s system = 15.91s size = 1260308 total)
 Mon 22/11/2004 02:00: Success (user = 5401.45s system = 15.65s size = 1260466 total)
 Mon 29/11/2004 02:00: Failure (user = 0.13s system = 0.06s)
+Tue 30/11/2004 02:00: Success (user = 5232.87s system = 16.09s size = 1260475 total)
+Wed 01/12/2004 02:00: Success (user = 5267.60s system = 16.44s size = 1260475 total)
+Thu 02/12/2004 02:00: Failure (user = 699.53s system = 5.54s)
