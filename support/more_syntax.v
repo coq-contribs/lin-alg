@@ -27,16 +27,14 @@ cases not printing the coercions is in fact the desired behaviour.
 
 (** %\label{moresyntax}% *)
 
-Notation "a +' b" := (sgroup_law ? a b) (at level 4, left associativity).
+Notation "a +' b" := (sgroup_law _ a b) (at level 50, left associativity).
 
-Notation "'zero' a" := (monoid_unit a) (at level 10).
+Notation "'zero' a" := (monoid_unit a) (at level 100).
 
-Notation "'one'" := (ring_unit ?).
+Notation one := (ring_unit _).
 
-Notation "a 'mX' b" := (module_mult a b) (at level 3, right associativity)
-  V8only (at level 42, right associativity).
+Notation "a 'mX' b" := (module_mult a b) (at level 42, right associativity).
 
-Notation "a 'rX' b" := (ring_mult a b) (at level 3, right associativity)
-  V8only (at level 42, right associativity).
+Notation "a 'rX' b" := (ring_mult a b) (at level 42, right associativity).
 
-Notation "'min' a" := (group_inverse ? a) (at level 10).
+Notation "'min' a" := (group_inverse _ a) (at level 100).

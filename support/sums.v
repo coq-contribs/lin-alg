@@ -1,5 +1,6 @@
 (** %\subsection*{ support :  sums.v }%*)
 Set Implicit Arguments.
+Unset Strict Implicit.
 Require Export Map_embed.
 Require Export algebra_omissions.
 Require Export Sub_monoid.
@@ -10,80 +11,86 @@ Require Export more_syntax.
  Of course we take the sum of an empty sequence to be zero 
 
  %\label{sum}% *)
-Fixpoint sum [V:monoid;n:Nat] : (seq n V) -> V :=
-   <[n:Nat](seq n V)->V>
-  Cases n of 
-    O => [x:(seq O V)] (zero V)
-  | (S m) => [x:(seq (S m) V)] (head x)+'(sum (Seqtl x))
-end.
+Fixpoint sum (V : monoid) (n : Nat) {struct n} : seq n V -> V :=
+  match n return (seq n V -> V) with
+  | O => fun x : seq 0 V => zero V
+  | S m => fun x : seq (S m) V => head x +' sum (Seqtl x)
+  end.
 
-Lemma sum_comp: (M:monoid;n:Nat;f,f':(seq n M))
-  f='f' -> (sum f)='(sum f').
-NewInduction n.
-Intros.
-Simpl.
-Apply Refl.
-Intros.
-Unfold sum.
-(Apply SGROUP_comp;Auto with algebra).
-Apply IHn.
-Change (Seqtl f)='(Seqtl f').
-(Apply Seqtl_comp;Auto with algebra).
+Lemma sum_comp :
+ forall (M : monoid) (n : Nat) (f f' : seq n M),
+ f =' f' in _ -> sum f =' sum f' in _.
+induction n.
+intros.
+simpl in |- *.
+apply Refl.
+intros.
+unfold sum in |- *.
+apply SGROUP_comp; auto with algebra.
+apply IHn.
+change (Seqtl f =' Seqtl f' in _) in |- *.
+apply Seqtl_comp; auto with algebra.
 Qed.
 
-Hints Resolve sum_comp : algebra.
+Hint Resolve sum_comp: algebra.
 
-Lemma sum_cons : (M:monoid;m:M; n:Nat;f:(seq n M))
-  (sum m;;f)=' m +' (sum f).
-Intros.
-Induction n.
-Simpl.
-Apply Refl.
-Unfold 1 sum.
-Apply SGROUP_comp;Auto with algebra.
-Apply sum_comp.
-Generalize Dependent (Seqtl_cons_inv m f);Intro p.
-Apply p.
+Lemma sum_cons :
+ forall (M : monoid) (m : M) (n : Nat) (f : seq n M),
+ sum (m;; f) =' m +' sum f in _.
+intros.
+induction  n as [| n Hrecn].
+simpl in |- *.
+apply Refl.
+unfold sum at 1 in |- *.
+apply SGROUP_comp; auto with algebra.
+apply sum_comp.
+generalize dependent (Seqtl_cons_inv m f); intro p.
+apply p.
 Qed.
 
-Hints Resolve sum_cons : algebra.
+Hint Resolve sum_cons: algebra.
 
-Lemma sum_concat: (n,m:Nat;G:monoid;a:(seq n G);b:(seq m G))
-  (sum a++b)='(sum a)+'(sum b).
-NewInduction n.
-Intros.
-(Apply Trans with (zero G) +'(sum b);Auto with algebra).
-Intros.
-(Apply Trans with (sum (hdtl a))+'(sum b);Auto with algebra).
-(Apply Trans with (sum (hdtl a)++b);Auto with algebra).
-Apply Trans with (sum (head a);;((Seqtl a)++b)).
-Unfold hdtl.
-(Apply sum_comp;Auto with algebra).
-Unfold hdtl.
-(Apply Trans with (head a)+'(sum (Seqtl a)++b);Auto with algebra).
-(Apply Trans with ((head a)+'(sum (Seqtl a)))+' (sum b);Auto with algebra).
-(Apply Trans with (head a)+'((sum (Seqtl a))+'(sum b));Auto with algebra).
+Lemma sum_concat :
+ forall (n m : Nat) (G : monoid) (a : seq n G) (b : seq m G),
+ sum (a ++ b) =' sum a +' sum b in _.
+induction n.
+intros.
+apply Trans with ((zero G) +' sum b); auto with algebra.
+intros.
+apply Trans with (sum (hdtl a) +' sum b); auto with algebra.
+apply Trans with (sum (hdtl a ++ b)); auto with algebra.
+apply Trans with (sum (head a;; Seqtl a ++ b)).
+unfold hdtl in |- *.
+apply sum_comp; auto with algebra.
+unfold hdtl in |- *.
+apply Trans with (head a +' sum (Seqtl a ++ b)); auto with algebra.
+apply Trans with (head a +' sum (Seqtl a) +' sum b); auto with algebra.
+apply Trans with (head a +' (sum (Seqtl a) +' sum b)); auto with algebra.
 Qed.
 
-Hints Resolve sum_concat : algebra.
+Hint Resolve sum_concat: algebra.
 
-Lemma subtype_sum : (n:nat;A:monoid;B:(submonoid A);c:(seq n B))
-  (subtype_elt (sum c))='(sum (Map_embed c)).
-Intros.
-Apply Sym.
-NewInduction n.
-Simpl.
-Auto with algebra.
-(Apply Trans with (head (Map_embed c))+'(sum (Seqtl (Map_embed c)));Auto with algebra).
-Apply Trans with (subtype_elt (head c)+'(sum (Seqtl c))).
-(Apply Trans with (subtype_elt (head c))+'(subtype_elt (sum (Seqtl c)));Auto with algebra).
-(Apply Trans with ((head (Map_embed c)) +' (sum (Map_embed (Seqtl c))));Auto with algebra).
-(Apply SGROUP_comp;Auto with algebra).
-(Apply sum_comp;Auto with algebra).
-(Apply Sym;Auto with algebra).
-Generalize Map_embed_Seqtl.
-Intro p.
-Apply (p ??? (c::(seq??))).
-Apply subtype_elt_comp.
-(Apply Sym;Auto with algebra).
+Lemma subtype_sum :
+ forall (n : nat) (A : monoid) (B : submonoid A) (c : seq n B),
+ subtype_elt (sum c) =' sum (Map_embed c) in _.
+intros.
+apply Sym.
+induction n.
+simpl in |- *.
+auto with algebra.
+apply Trans with (head (Map_embed c) +' sum (Seqtl (Map_embed c)));
+ auto with algebra.
+apply Trans with (subtype_elt (head c +' sum (Seqtl c))).
+apply Trans with (subtype_elt (head c) +' subtype_elt (sum (Seqtl c)));
+ auto with algebra.
+apply Trans with (head (Map_embed c) +' sum (Map_embed (Seqtl c)));
+ auto with algebra.
+apply SGROUP_comp; auto with algebra.
+apply sum_comp; auto with algebra.
+apply Sym; auto with algebra.
+generalize Map_embed_Seqtl.
+intro p.
+apply (p _ _ _ (c:seq _ _)).
+apply subtype_elt_comp.
+apply Sym; auto with algebra.
 Qed.

@@ -1,5 +1,6 @@
 (** %\subsection*{ examples :  Matrix\_multiplication.v }%*)
 Set Implicit Arguments.
+Unset Strict Implicit.
 Require Export vecspace_Mmn.
 Require Export pointwise.
 Require Export sums.
@@ -9,92 +10,107 @@ Require Export sums.
  on the setoid (matrix F m n) *)
 
 Section matrix_x_vector.
-Definition mat_vec_mult_fun : (F:field;m,n:Nat) (Mmn F m n)->(Fn F n)->(Fn F m).
-Intros.
-Simpl in X X0.
-Simpl.
-Apply (Build_Map 3![i:(fin m)](sum (pointwise (uncurry (RING_comp 1!F)) (Ap2_Map X i) X0))).
-Red;Simpl.
-Intros.
-(Apply sum_comp;Auto with algebra);(Apply toMap;Apply pointwise_comp;Auto with algebra).
-Simpl.
-Red;Simpl.
-Intro;NewDestruct X;Simpl;Auto with algebra.
+Definition mat_vec_mult_fun :
+  forall (F : field) (m n : Nat), Mmn F m n -> Fn F n -> Fn F m.
+intros.
+simpl in X, X0.
+simpl in |- *.
+apply
+ (Build_Map
+    (Ap:=fun i : fin m =>
+         sum (pointwise (uncurry (RING_comp (R:=F))) (Ap2_Map X i) X0))).
+red in |- *; simpl in |- *.
+intros.
+apply sum_comp; auto with algebra;
+ (apply toMap; apply pointwise_comp; auto with algebra).
+simpl in |- *.
+red in |- *; simpl in |- *.
+intro; destruct X; simpl in |- *; auto with algebra.
 Defined.
 
-Definition matXvec : (F:field;m,n:Nat)(Map2 (Mmn F m n) (Fn F n) (Fn F m)).
-Intros;Apply (Build_Map2 4!(!mat_vec_mult_fun F m n)).
-Red;Simpl;Red;Simpl.
-Intros.
-(Apply sum_comp;Auto with algebra);(Apply toMap;Apply pointwise_comp;Auto with algebra).
-Simpl.
-Red;Simpl.
-Intro;(Apply H;Auto with algebra).
+Definition matXvec :
+  forall (F : field) (m n : Nat), Map2 (Mmn F m n) (Fn F n) (Fn F m).
+intros; apply (Build_Map2 (Ap2:=mat_vec_mult_fun (F:=F) (m:=m) (n:=n))).
+red in |- *; simpl in |- *; red in |- *; simpl in |- *.
+intros.
+apply sum_comp; auto with algebra;
+ (apply toMap; apply pointwise_comp; auto with algebra).
+simpl in |- *.
+red in |- *; simpl in |- *.
+intro; (apply H; auto with algebra).
 Defined.
 End matrix_x_vector.
 
 Section matrix_x_matrix.
-Definition mat_mat_mult_fun : (F:field;m,n,p:Nat)
-  (Mmn F m n)->(Mmn F n p)->(Mmn F m p).
-Intros F m n p M N.
-Apply (Build_Map2 4![i,j](sum (pointwise (uncurry (RING_comp 1!F)) (row M i) (col N j)))).
-Red;Simpl.
-Intros.
-(Apply sum_comp;Auto with algebra).
-(Apply toMap;Apply pointwise_comp;Auto with algebra).
-Change (row M x) =' (row M x').
-(Apply row_comp;Auto with algebra).
-Change (col N y) =' (col N y').
-(Apply col_comp;Auto with algebra).
+Definition mat_mat_mult_fun :
+  forall (F : field) (m n p : Nat), Mmn F m n -> Mmn F n p -> Mmn F m p.
+intros F m n p M N.
+apply
+ (Build_Map2
+    (Ap2:=fun i j =>
+          sum (pointwise (uncurry (RING_comp (R:=F))) (row M i) (col N j)))).
+red in |- *; simpl in |- *.
+intros.
+apply sum_comp; auto with algebra.
+apply toMap; apply pointwise_comp; auto with algebra.
+change (row M x =' row M x' in _) in |- *.
+apply row_comp; auto with algebra.
+change (col N y =' col N y' in _) in |- *.
+apply col_comp; auto with algebra.
 Defined.
 
-Definition matXmat : (F:field;m,n,p:Nat)(Map2 (Mmn F m n) (Mmn F n p) (Mmn F m p)).
-Intros;Apply (Build_Map2 4!(!mat_mat_mult_fun F m n p)).
-Red;Simpl.
-Intros.
-(Apply sum_comp;Auto with algebra);(Apply toMap;Apply pointwise_comp;Auto with algebra).
-Change (row x i) =' (row x' i').
-(Apply row_comp;Auto with algebra).
-Change (col y j) =' (col y' j').
-(Apply col_comp;Auto with algebra).
+Definition matXmat :
+  forall (F : field) (m n p : Nat), Map2 (Mmn F m n) (Mmn F n p) (Mmn F m p).
+intros;
+ apply (Build_Map2 (Ap2:=mat_mat_mult_fun (F:=F) (m:=m) (n:=n) (p:=p))).
+red in |- *; simpl in |- *.
+intros.
+apply sum_comp; auto with algebra;
+ (apply toMap; apply pointwise_comp; auto with algebra).
+change (row x i =' row x' i' in _) in |- *.
+apply row_comp; auto with algebra.
+change (col y j =' col y' j' in _) in |- *.
+apply col_comp; auto with algebra.
 Defined.
 End matrix_x_matrix.
 
 Section facts.
-Variable F:field.
-Variable n,m,p:Nat.
-Variable M:(Mmn F m n).
-Variable N:(Mmn F n p).
-Lemma matXmat_col : (i:(fin p))
-  (col (matXmat ???? M N) i)='(matXvec ??? M (col N i)).
-Intros.
-Unfold col matXmat matXvec.
-Simpl.
-Red;Simpl.
-Intros.
-(Apply sum_comp;Auto with algebra).
+Variable F : field.
+Variable n m p : Nat.
+Variable M : Mmn F m n.
+Variable N : Mmn F n p.
+Lemma matXmat_col :
+ forall i : fin p,
+ col (matXmat _ _ _ _ M N) i =' matXvec _ _ _ M (col N i) in _.
+intros.
+unfold col, matXmat, matXvec in |- *.
+simpl in |- *.
+red in |- *; simpl in |- *.
+intros.
+apply sum_comp; auto with algebra.
 Qed.
 End facts.
 
 Section morefacts.
 Require Export Cfield_facts.
-Variable F:cfield.
-Variable n,m,p:Nat.
-Variable M:(Mmn F m n).
-Variable N:(Mmn F n p).
-Lemma matXmat_row : (i:(fin m))
-  (row (matXmat ???? M N) i)='(matXvec ??? (transpose N) (row M i)).
-Intros.
-Unfold transpose row matXmat matXvec.
-Simpl.
-NewDestruct N.
-Red;Simpl.
-Unfold row col.
-Intros.
-(Apply sum_comp;Auto with algebra).
-Simpl.
-Red;Simpl.
-Auto with algebra.
+Variable F : cfield.
+Variable n m p : Nat.
+Variable M : Mmn F m n.
+Variable N : Mmn F n p.
+Lemma matXmat_row :
+ forall i : fin m,
+ row (matXmat _ _ _ _ M N) i =' matXvec _ _ _ (transpose N) (row M i) in _.
+intros.
+unfold transpose, row, matXmat, matXvec in |- *.
+simpl in |- *.
+destruct N.
+red in |- *; simpl in |- *.
+unfold row, col in |- *.
+intros.
+apply sum_comp; auto with algebra.
+simpl in |- *.
+red in |- *; simpl in |- *.
+auto with algebra.
 Qed.
 End morefacts.
 (* Note that one needs the fact that F is a *commutative* field *)

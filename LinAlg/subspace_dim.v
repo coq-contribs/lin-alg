@@ -1,21 +1,20 @@
 (** * subspace_dim.v *)
 Set Implicit Arguments.
+Unset Strict Implicit.
 Require Export bases_finite_dim.
 
 (** - This file proves theorem 1.11 - every subspace W of a finite-dimensional
 vectorspace V has itself a finite dimension < dim(V) *)
 
-Fixpoint span_ind_uninject [F:field;V:(vectorspace F);W:(subspace V);
-  X:(part_set W);x:(span_ind_formal (inject_subsets X))] : (span_ind_formal X) :=
-
-  Cases x of Zerovector =>
-                  (Zerovector ?)
-           | (Immediately c) =>
-                  (Immediately 3!X (uninject_subsetsify c))
-           | (Plusvector x1 x2) =>
-                  (Plusvector (span_ind_uninject x1) (span_ind_uninject x2))
-           | (Multvector f x1) =>
-                  (Multvector f (span_ind_uninject x1))
+Fixpoint span_ind_uninject (F : field) (V : vectorspace F) 
+ (W : subspace V) (X : part_set W) (x : span_ind_formal (inject_subsets X))
+ {struct x} : span_ind_formal X :=
+  match x with
+  | Zerovector => Zerovector _
+  | Immediately c => Immediately (S:=X) (uninject_subsetsify c)
+  | Plusvector x1 x2 =>
+      Plusvector (span_ind_uninject x1) (span_ind_uninject x2)
+  | Multvector f x1 => Multvector f (span_ind_uninject x1)
   end.
 
 (*
@@ -28,69 +27,98 @@ Axiom span_ind_uninject_prop : (F:field;V:(vectorspace F);W:(subspace V);X:(part
  command actually takes a full 40 minutes! (on my machine; a PIII/733MHz)
 *)
 
-Lemma span_ind_uninject_prop : (F:field;V:(vectorspace F);W:(subspace V);X:(part_set W);x:(span_ind_formal (inject_subsets X)))   (span_ind_injection x)='(subtype_elt (span_ind_injection (span_ind_uninject x))).
-Intros.
-Rename x into x1.
-NewInduction x1.
-Simpl.
-Apply Refl.
-Simpl.
-Simpl in c.
-NewDestruct c.
-Simpl.
-Apply Refl.
-Apply Trans with (span_ind_injection x0)+'(span_ind_injection x2);[Apply Refl | Idtac].
-Apply Trans with (subtype_elt (span_ind_injection (Plusvector (span_ind_uninject x0) (span_ind_uninject x2))));[Idtac | Apply Refl].
-Apply Trans with (subtype_elt (span_ind_injection (span_ind_uninject x0))+'(span_ind_injection (span_ind_uninject x2))).
-2:Apply subtype_elt_comp.
-2:Simpl.
-2:Red;Apply Refl.
-Apply Trans with (subtype_elt (span_ind_injection (span_ind_uninject x0)))+'(subtype_elt (span_ind_injection (span_ind_uninject x2))).
-2:Apply Refl.
-Apply SGROUP_comp.
-Apply IHx0.
-Apply IHx2.
-Apply Trans with c mX (span_ind_injection x1);[Apply Refl|Idtac].
-Apply Trans with (subtype_elt c mX (span_ind_injection (span_ind_uninject x1)));[Idtac|Abstract Apply Refl].
-Apply Trans with c mX (subtype_elt (span_ind_injection (span_ind_uninject x1)));Abstract Auto with algebra.
+Lemma span_ind_uninject_prop :
+ forall (F : field) (V : vectorspace F) (W : subspace V) 
+   (X : part_set W) (x : span_ind_formal (inject_subsets X)),
+ span_ind_injection x ='
+ subtype_elt (span_ind_injection (span_ind_uninject x)) in _.
+intros.
+rename x into x1.
+induction x1 as [| c| x0 IHx0 x2 IHx2| c x1 IHx1].
+simpl in |- *.
+apply Refl.
+simpl in |- *.
+simpl in c.
+destruct c.
+simpl in |- *.
+apply Refl.
+apply Trans with (span_ind_injection x0 +' span_ind_injection x2);
+ [ apply Refl | idtac ].
+apply
+ Trans
+  with
+    (subtype_elt
+       (span_ind_injection
+          (Plusvector (span_ind_uninject x0) (span_ind_uninject x2))));
+ [ idtac | apply Refl ].
+apply
+ Trans
+  with
+    (subtype_elt
+       (span_ind_injection (span_ind_uninject x0) +'
+        span_ind_injection (span_ind_uninject x2))).
+2: apply subtype_elt_comp.
+2: simpl in |- *.
+2: red in |- *; apply Refl.
+apply
+ Trans
+  with
+    (subtype_elt (span_ind_injection (span_ind_uninject x0)) +'
+     subtype_elt (span_ind_injection (span_ind_uninject x2))).
+2: apply Refl.
+apply SGROUP_comp.
+apply IHx0.
+apply IHx2.
+apply Trans with (c mX span_ind_injection x1); [ apply Refl | idtac ].
+apply
+ Trans with (subtype_elt (c mX span_ind_injection (span_ind_uninject x1)));
+ [ idtac | abstract apply Refl ].
+apply
+ Trans with (c mX subtype_elt (span_ind_injection (span_ind_uninject x1)));
+ abstract auto with algebra.
 Time Qed.
 
 Section prelim.
-Variable F:field.
-Variable V:(vectorspace F).
+Variable F : field.
+Variable V : vectorspace F.
 
-Lemma not_generates_then_leaves_over : (S:(part_set V))
-  ~(generates S (full V)) -> (EXT v:V | ~(in_part v(span_set S))).
-Intros.
-Unfold generates in H.
-Apply NNPP;Intro.
-Red in H;Apply H.
-Intro.
-Simpl;Split;Auto;Intros _.
-Apply NNPP;Intro.
-Red in H0;Apply H0.
-Exists x.
-Simpl;Auto.
+Lemma not_generates_then_leaves_over :
+ forall S : part_set V,
+ ~ generates S (full V) -> exists v : V, ~ in_part v (span_set S).
+intros.
+unfold generates in H.
+apply NNPP; intro.
+red in H; apply H.
+intro.
+simpl in |- *; split; auto; intros _.
+apply NNPP; intro.
+red in H0; apply H0.
+exists x.
+simpl in |- *; auto.
 Qed.
 
 (** - Once we know that some subset of $V$ has an element, we must be able to get it
  if we want to prove theorem 1.11 - hence this axiom. It is a kind of choice principle,
  hence the name I gave it. I know AC+EM+impredicativity = inconsistency, but type isn't
  impredicative so we should be OK *)
-Axiom AC' : (S:(part_set V))(EXT v:V | (in_part v S))->(sigT V [v:V](in_part v S)).
+Axiom
+  AC' :
+    forall S : part_set V,
+    (exists v : V, in_part v S) -> sigT (fun v : V => in_part v S).
 
-Lemma ACcomplement :  (S:(part_set V))
-  (EXT v:V | ~(in_part v S)) -> (sigT V [v:V]~(in_part v S)).
-Intros.
-Cut (EXT v:V | (in_part v (compl S)));Try Intro.
-Generalize (AC' H0).
-Intro.
-NewDestruct X.
-Exists x.
-Simpl in i.
-Auto.
-Simpl.
-Auto.
+Lemma ACcomplement :
+ forall S : part_set V,
+ (exists v : V, ~ in_part v S) -> sigT (fun v : V => ~ in_part v S).
+intros.
+cut (exists v : V, in_part v (compl S)); try intro.
+generalize (AC' H0).
+intro.
+destruct X.
+exists x.
+simpl in i.
+auto.
+simpl in |- *.
+auto.
 Qed.
 
 (** - Also we need to be able to decide whether some set generates the vectorspace.
@@ -98,382 +126,424 @@ Qed.
  informative or (i.e., {A}+{B}) Since I didn't introduce AC on the Set level, we should
  still be OK; also we don't have full EM, just for this one predicate. *)
 
-Axiom dec_gen : (S:(part_set V)){(generates S (full V))}+{~(generates S (full V))}.
+Axiom
+  dec_gen :
+    forall S : part_set V, {generates S (full V)} + {~ generates S (full V)}.
 
 (** - To extend a linearly independent sequence (whenever possible): *)
-Definition try_extend : (k:Nat;v:(seq k V))
-  (lin_indep (seq_set v))/\(distinct v) ->
-    (sigT ? [i:Nat](sigT ? [w:(seq i V)](lin_indep (seq_set w))/\(distinct w))).
-Intros.
-Generalize (dec_gen (seq_set v)).
-Intro.
-Inversion_clear H0.
-Exists k.
-Exists v.
-Auto.
-Exists (S k).
-Generalize Dependent (ACcomplement (not_generates_then_leaves_over H1)).
-Intro.
-NewDestruct X.
-Exists x;;v.
-Inversion_clear H;Split.
-Elim (lin_dep_vs_span_lemma H0 5!x).
-Intros.
-Apply lin_indep_comp with (union (seq_set v) (single x));Auto with algebra.
-Red;Intro p;Generalize Dependent (H p).
-Auto.
-Generalize Dependent set_included_in_its_span.
-Unfold included.
-Intros;Intro;Red in n;Apply n.
-Apply in_part_comp_r with ((span (seq_set v))::(part_set V));Auto with algebra.
-Apply distinct_cons.
-Auto.
-Intros.
-Intro.
-Red in n.
-Apply n.
-Apply in_part_comp_r with ((span (seq_set v))::(part_set V));Auto with algebra.
-Apply set_included_in_its_span.
-Exists i.
-Auto.
+Definition try_extend :
+  forall (k : Nat) (v : seq k V),
+  lin_indep (seq_set v) /\ distinct v ->
+  sigT
+    (fun i : Nat =>
+     sigT (fun w : seq i V => lin_indep (seq_set w) /\ distinct w)).
+intros.
+generalize (dec_gen (seq_set v)).
+intro.
+inversion_clear H0.
+exists k.
+exists v.
+auto.
+exists (S k).
+generalize dependent (ACcomplement (not_generates_then_leaves_over H1)).
+intro.
+destruct X.
+exists (x;; v).
+inversion_clear H; split.
+elim (lin_dep_vs_span_lemma H0 (x:=x)).
+intros.
+apply lin_indep_comp with (union (seq_set v) (single x)); auto with algebra.
+red in |- *; intro p; generalize dependent (H p).
+auto.
+generalize dependent set_included_in_its_span.
+unfold included in |- *.
+intros; intro; red in n; apply n.
+apply in_part_comp_r with (span (seq_set v):part_set V); auto with algebra.
+apply distinct_cons.
+auto.
+intros.
+intro.
+red in n.
+apply n.
+apply in_part_comp_r with (span (seq_set v):part_set V); auto with algebra.
+apply set_included_in_its_span.
+exists i.
+auto.
 Defined.
 
 (** - It has the desired properties: *)
 
-Lemma extend_prop : (k:Nat;v:(seq k V);H:(lin_indep (seq_set v))/\(distinct v))
-  Cases (try_extend H) of (existT i _) =>
-      (i='k <-> (span (seq_set v))='(full V) in (part_set V))
-   /\ (i='(S k)<->~(span (seq_set v))='(full V) in (part_set V))
-  end.
-Intros.
-Unfold try_extend.
-LetTac dgv := (dec_gen (seq_set v)).
-Case dgv.
-Intro.
-Red in g.
-Split;Split.
-Auto.
-Simpl;Auto.
-Intro;Intro.
-Clear H1 g dgv H v V F.
-Simpl in k.
-Simpl in H0.
-NewInduction k;Intuition.
-Inversion_clear H0.
-Intro.
-Red in H0;Apply False_ind.
-Auto.
-Intro.
-LetTac Acv:=(ACcomplement (not_generates_then_leaves_over n)).
-Case Acv.
-Intros.
-Split;Split.
-Intro;Apply False_ind.
-Simpl in H0.
-Clear n0 x Acv n dgv H v.
-NewInduction k;Intuition.
-Inversion_clear H0.
+Lemma extend_prop :
+ forall (k : Nat) (v : seq k V) (H : lin_indep (seq_set v) /\ distinct v),
+ match try_extend H with
+ | existT i _ =>
+     (i =' k in _ <-> span (seq_set v) =' full V in part_set V) /\
+     (i =' S k in _ <-> ~ span (seq_set v) =' full V in part_set V)
+ end.
+intros.
+unfold try_extend in |- *.
+set (dgv := dec_gen (seq_set v)) in *.
+case dgv.
+intro.
+red in g.
+split; split.
+auto.
+simpl in |- *; auto.
+intro; intro.
+clear H1 g dgv H v V F.
+simpl in k.
+simpl in H0.
+induction k; intuition.
+inversion_clear H0.
+intro.
+red in H0; apply False_ind.
+auto.
+intro.
+set (Acv := ACcomplement (not_generates_then_leaves_over n)) in *.
+case Acv.
+intros.
+split; split.
+intro; apply False_ind.
+simpl in H0.
+clear n0 x Acv n dgv H v.
+induction k; intuition.
+inversion_clear H0.
 
-Intros;Apply False_ind;Intuition.
-2:Auto with algebra.
-Intros _.
-Intro.
-Red in n0;Apply n0.
-Case (H0 x).
-Simpl;Auto with algebra.
+intros; apply False_ind; intuition.
+2: auto with algebra.
+intros _.
+intro.
+red in n0; apply n0.
+case (H0 x).
+simpl in |- *; auto with algebra.
 Qed.
 
-Lemma extend_prop2 : (k:Nat;v:(seq k V);H:(lin_indep (seq_set v))/\(distinct v))
-  Cases (try_extend H) of (existT i (existT w H')) =>
-       (i='k <-> (seq_equal v w))
-    /\ (i='(S k)-> (seq_equal v (Seqtl w)))
-  end.
-Intros.
-Unfold try_extend.
-LetTac dgv := (dec_gen (seq_set v)).
-Case dgv.
-Intro.
-Split;Try Split;Auto with algebra.
-Intros.
-Simpl in H0.
-Apply False_ind.
-Clear g dgv H v;NewInduction k;Intuition;Inversion_clear H0.
-Intro.
-LetTac Acv:=(ACcomplement (not_generates_then_leaves_over n)).
-Case Acv.
-Intros.
-Split;Try Split.
-Intro;Apply False_ind.
-Simpl in H0.
-Clear n0 x Acv n dgv H v.
-NewInduction k;Intuition;Inversion_clear H0.
-Intros;Apply False_ind;Intuition.
-2:Intros _.
-2:Apply Map_eq_seq_equal;Auto with algebra.
-Generalize Dependent (seq_equal_length_equal H0).
-Intro p;Simpl in p.
-Clear b H2 H1 H0 n0 x Acv n v.
-NewInduction k;Intuition;Inversion_clear p.
+Lemma extend_prop2 :
+ forall (k : Nat) (v : seq k V) (H : lin_indep (seq_set v) /\ distinct v),
+ match try_extend H with
+ | existT i (existT w H') =>
+     (i =' k in _ <-> seq_equal v w) /\
+     (i =' S k in _ -> seq_equal v (Seqtl w))
+ end.
+intros.
+unfold try_extend in |- *.
+set (dgv := dec_gen (seq_set v)) in *.
+case dgv.
+intro.
+split; try split; auto with algebra.
+intros.
+simpl in H0.
+apply False_ind.
+clear g dgv H v; induction k; intuition; inversion_clear H0.
+intro.
+set (Acv := ACcomplement (not_generates_then_leaves_over n)) in *.
+case Acv.
+intros.
+split; try split.
+intro; apply False_ind.
+simpl in H0.
+clear n0 x Acv n dgv H v.
+induction k; intuition; inversion_clear H0.
+intros; apply False_ind; intuition.
+2: intros _.
+2: apply Map_eq_seq_equal; auto with algebra.
+generalize dependent (seq_equal_length_equal H0).
+intro p; simpl in p.
+clear b H2 H1 H0 n0 x Acv n v.
+induction k; intuition; inversion_clear p.
 Qed.
 
 (** - To repeat this extending procedure $n$ times: *)
-Fixpoint rep_ext [n:nat] : (k:Nat;v:(seq k V))
-  (lin_indep (seq_set v))/\(distinct v) ->
-    (sigT ? [i:Nat](sigT ? [w:(seq i V)](lin_indep (seq_set w))/\(distinct w)))
-:=
-  [k;v;H]
-  Cases n of
-     O => (existT ? [i:Nat]? k (existT ? [w:(seq k V)]? v H))
-  | (S m) => Cases (rep_ext m H) of (existT i (existT w H')) =>
-               (try_extend H')
-             end
+Fixpoint rep_ext (n : nat) (k : Nat) (v : seq k V)
+ (H : lin_indep (seq_set v) /\ distinct v) {struct n} :
+ sigT
+   (fun i : Nat =>
+    sigT (fun w : seq i V => lin_indep (seq_set w) /\ distinct w)) :=
+  match n with
+  | O => existT (fun i : Nat => _) k (existT (fun w : seq k V => _) v H)
+  | S m =>
+      match rep_ext m H with
+      | existT i (existT w H') => try_extend H'
+      end
   end.
 
-Lemma preserve_lin_indep: (n,k:Nat;v:(seq k V);H:(lin_indep (seq_set v))/\(distinct v))
-  Cases (rep_ext n H) of (existT i (existT w H')) =>
-    (lin_indep (seq_set w))/\(distinct w)
-  end.
-Intros.
-Case (rep_ext n H).
-Intros;NewDestruct s.
-Auto.
+Lemma preserve_lin_indep :
+ forall (n k : Nat) (v : seq k V) (H : lin_indep (seq_set v) /\ distinct v),
+ match rep_ext n H with
+ | existT i (existT w H') => lin_indep (seq_set w) /\ distinct w
+ end.
+intros.
+case (rep_ext n H).
+intros; destruct s.
+auto.
 Qed.
 
-Lemma grow_nr_elts : (n,k:Nat;v:(seq k V);H:(lin_indep (seq_set v))/\(distinct v))
-  (has_n_elements k (seq_set v))->
-  Cases (rep_ext n H) of (existT i (existT w H')) =>
-    (has_n_elements i (seq_set w))
-  end.
-NewInduction n.
-Simpl.
-Auto.
-Intros.
-Simpl.
-Generalize Dependent (IHn ?? H H0).
-Case (rep_ext n H).
-Intros;NewDestruct s.
-Generalize Dependent  (extend_prop a).
-Generalize Dependent (extend_prop2 a).
-Case (try_extend a).
-Intros;NewDestruct s.
-Inversion_clear H2.
-Inversion_clear H3.
-Case (classic (span 2!V (seq_set x0))='(full V) in (part_set V)).
-Elim H2;Intros.
-Generalize Dependent (H7 H8);Intro p;Simpl in p.
-Clear H6 H5 H2 H3 a0 a H IHn.
-Clear H0 v k H7 H8.
-Inversion_clear H4.
-Simpl in H;Generalize Dependent (H p);Intros.
-Apply has_n_elements_comp with x (seq_set x0);Simpl;Auto with algebra.
-Generalize Dependent (seq_equal_seq_set H2).
-Simpl;Auto.
-Clear H2 H4.
-Inversion_clear H6.
-Intro.
-Generalize Dependent (H3 H4);Intro p;Simpl in p.
-Clear H2 H3.
-Generalize Dependent x2.
-Rewrite p.
-Intros.
-Apply has_n_elements_comp with (S x) (seq_set (head x2);;x0).
-3:Simpl;Auto.
-2:Apply Trans with (seq_set (head x2);;(Seqtl x2));Auto with algebra.
-Generalize Dependent (H5 (Refl (S x)::Nat)).
-Clear H4 H5;Intro p'.
-Clear p x1 H0 H v k IHn n.
-Apply seq_set_n_element_subset.
-Exists (head x2);;x0.
-Split;Auto with algebra.
-Apply distinct_comp with x2.
-Inversion_clear a0;Auto.
-Apply Trans with (head x2);;(Seqtl x2);Auto with algebra.
+Lemma grow_nr_elts :
+ forall (n k : Nat) (v : seq k V) (H : lin_indep (seq_set v) /\ distinct v),
+ has_n_elements k (seq_set v) ->
+ match rep_ext n H with
+ | existT i (existT w H') => has_n_elements i (seq_set w)
+ end.
+induction n.
+simpl in |- *.
+auto.
+intros.
+simpl in |- *.
+generalize dependent (IHn _ _ H H0).
+case (rep_ext n H).
+intros; destruct s.
+generalize dependent (extend_prop a).
+generalize dependent (extend_prop2 a).
+case (try_extend a).
+intros; destruct s.
+inversion_clear H2.
+inversion_clear H3.
+case (classic (span (V:=V) (seq_set x0) =' full V in part_set V)).
+elim H2; intros.
+generalize dependent (H7 H8); intro p; simpl in p.
+clear H6 H5 H2 H3 a0 a H IHn.
+clear H0 v k H7 H8.
+inversion_clear H4.
+simpl in H; generalize dependent (H p); intros.
+apply has_n_elements_comp with x (seq_set x0); simpl in |- *;
+ auto with algebra.
+generalize dependent (seq_equal_seq_set H2).
+simpl in |- *; auto.
+clear H2 H4.
+inversion_clear H6.
+intro.
+generalize dependent (H3 H4); intro p; simpl in p.
+clear H2 H3.
+generalize dependent x2.
+rewrite p.
+intros.
+apply has_n_elements_comp with (S x) (seq_set (head x2;; x0)).
+3: simpl in |- *; auto.
+2: apply Trans with (seq_set (head x2;; Seqtl x2)); auto with algebra.
+generalize dependent (H5 (Refl (S x:Nat))).
+clear H4 H5; intro p'.
+clear p x1 H0 H v k IHn n.
+apply seq_set_n_element_subset.
+exists (head x2;; x0).
+split; auto with algebra.
+apply distinct_comp with x2.
+inversion_clear a0; auto.
+apply Trans with (head x2;; Seqtl x2); auto with algebra.
 Qed.
 End prelim.
 
 Section MAIN.
-Variable F:field.
-Variable V:(findimvecsp F).
+Variable F : field.
+Variable V : findimvecsp F.
 
-Variable W:(subspace V).
+Variable W : subspace V.
 
-Local H : (lin_indep (seq_set (empty_seq W)))/\(distinct (empty_seq W)).
-Split;Try Apply lin_indep_comp with (empty W);Auto with algebra.
-Apply empty_lin_indep.
-Intro.
-Auto with algebra.
+Let H : lin_indep (seq_set (empty_seq W)) /\ distinct (empty_seq W).
+split; try apply lin_indep_comp with (empty W); auto with algebra.
+apply empty_lin_indep.
+intro.
+auto with algebra.
 Qed.
 
-Lemma grow_bound : (n:nat)Cases (rep_ext n H) of (existT i (existT w H')) => (le i n) end.
-Intros;Move n after W.
-NewInduction n.
-Simpl.
-Auto.
-Generalize Dependent IHn.
-LetTac re := (rep_ext n H).
-Change Cases re of (existT i (existT w _)) => (le i n) end 
-         -> Cases (Cases re of (existT i (existT w H')) => (try_extend H') end)
-              of (existT i (existT w _)) => (le i (S n)) end.
-Case re.
-Intros x s.
-NewDestruct s.
-Intros.
-Generalize Dependent  (extend_prop a).
-Case (try_extend a).
-Intros x1 s;NewDestruct s.
-Case (classic (span 2!W (seq_set x0))='(full W) in (part_set W)).
-Intros.
-Inversion_clear H2.
-Clear H4;Elim H3;Intros p q.
-Generalize Dependent (q H1);Intro r;Simpl in r.
-Rewrite r.
-Auto with arith.
-Intros.
-Inversion_clear H2.
-Clear H3;Elim H4;Intros p q.
-Generalize Dependent (q H1);Intro r;Simpl in r.
-Rewrite r.
-Auto with arith.
+Lemma grow_bound :
+ forall n : nat,
+ match rep_ext n H with
+ | existT i (existT w H') => i <= n
+ end.
+intros; move n after W.
+induction n.
+simpl in |- *.
+auto.
+generalize dependent IHn.
+set (re := rep_ext n H) in *.
+change
+  (match re with
+   | existT i (existT w _) => i <= n
+   end ->
+   match match re with
+         | existT i (existT w H') => try_extend H'
+         end with
+   | existT i (existT w _) => i <= S n
+   end) in |- *.
+case re.
+intros x s.
+destruct s.
+intros.
+generalize dependent (extend_prop a).
+case (try_extend a).
+intros x1 s; destruct s.
+case (classic (span (V:=W) (seq_set x0) =' full W in part_set W)).
+intros.
+inversion_clear H2.
+clear H4; elim H3; intros p q.
+generalize dependent (q H1); intro r; simpl in r.
+rewrite r.
+auto with arith.
+intros.
+inversion_clear H2.
+clear H3; elim H4; intros p q.
+generalize dependent (q H1); intro r; simpl in r.
+rewrite r.
+auto with arith.
 Qed.
 
 
-Local n:=(the_dim V).
+Let n := the_dim V.
 (** - %\intoc{\bf Theorem 1.11}% *)
-Lemma subspace_preserves_findimvecsp : (sigT nat [m] (le m n) /\ (has_dim m W)).
+Lemma subspace_preserves_findimvecsp : sigT (fun m => m <= n /\ has_dim m W).
 
-Generalize Dependent grow_bound;Intro H0.
+generalize dependent grow_bound; intro H0.
 
-Assert (has_n_elements O (seq_set (empty_seq W))).
-Apply has_n_elements_comp with O (empty W);Auto with algebra.
+assert (has_n_elements 0 (seq_set (empty_seq W))).
+apply has_n_elements_comp with 0 (empty W); auto with algebra.
 
-Assert (n:nat)Cases (rep_ext n H) of  (existT i (existT w _)) =>
- (has_n_elements i (seq_set w))  end.
-Clear n;Intro n.
-Move n after W.
-Apply grow_nr_elts.
-Auto.
+assert
+ (forall n : nat,
+  match rep_ext n H with
+  | existT i (existT w _) => has_n_elements i (seq_set w)
+  end).
+clear n; intro n.
+move n after W.
+apply grow_nr_elts.
+auto.
 
-LetTac re_i := Cases (rep_ext n H) of (existT i _) => i end.
+set (re_i := match rep_ext n H with
+             | existT i _ => i
+             end) in *.
 
-Exists re_i.
-Split.
-Unfold re_i.
-Generalize Dependent (H0 n).
-Case (rep_ext n H).
-Intros x s.
-NewDestruct s.
-Auto.
+exists re_i.
+split.
+unfold re_i in |- *.
+generalize dependent (H0 n).
+case (rep_ext n H).
+intros x s.
+destruct s.
+auto.
 
-Cut (Cases (rep_ext n H) of (existT i (existT w H)) => (is_basis (seq_set w)) end).
-Intro.
-Generalize Dependent (H2 n).
-NewDestruct (rep_ext n H).
-NewDestruct s.
-Intro.
-Apply has_dim_easy with (seq_set x0).
-Auto.
-Unfold re_i.
-Auto.
+cut
+ match rep_ext n H with
+ | existT i (existT w H) => is_basis (seq_set w)
+ end.
+intro.
+generalize dependent (H2 n).
+destruct (rep_ext n H).
+destruct s.
+intro.
+apply has_dim_easy with (seq_set x0).
+auto.
+unfold re_i in |- *.
+auto.
 
-Clear re_i.
-Unfold is_basis.
+clear re_i.
+unfold is_basis in |- *.
 
-Assert (n:nat)Cases (rep_ext n H) of (existT i (existT w H)) => 
-  (lt i n)->(span (seq_set w))='(full W) in (part_set W) end.
-Clear n;NewInduction n.
-Intro.
-Inversion_clear H3.
+assert
+ (forall n : nat,
+  match rep_ext n H with
+  | existT i (existT w H) =>
+      i < n -> span (seq_set w) =' full W in part_set W
+  end).
+clear n; induction n.
+intro.
+inversion_clear H3.
 
-Simpl.
-LetTac re := (rep_ext n0 H).
-Change Cases Cases re of (existT i (existT w H'))=>(try_extend H') end of
-  (existT i' (existT w' _)) => (lt i' (S n0))->(span_set (seq_set w'))='(full W) end.
-Generalize Dependent IHn0.
-Case re.
-Intros x s;NewDestruct s.
-Intros.
-Generalize Dependent (extend_prop2 a).
-Generalize Dependent (extend_prop a).
-Case (try_extend a).
-Intros x' s;NewDestruct s.
-Intros.
-Inversion_clear H4;Inversion_clear H3.
-Inversion_clear H4;Inversion_clear H6(*;Inversion_clear H7*);Inversion_clear H8.
-Case (classic (span (seq_set x0))='(full W) in (part_set W)).
-Intro.
-Generalize Dependent (H9 H8);Intro p;Generalize Dependent (H4 p);Intro q.
-Apply Trans with (span_set (seq_set x0));Auto with algebra.
-Generalize Dependent span_comp;Intro r;Simpl in r;Simpl.
-Apply (r?W).
-Generalize Dependent seq_equal_seq_set.
-Simpl.
-Auto with algebra.
+simpl in |- *.
+set (re := rep_ext n0 H) in *.
+change
+  match match re with
+        | existT i (existT w H') => try_extend H'
+        end with
+  | existT i' (existT w' _) =>
+      i' < S n0 -> span_set (seq_set w') =' full W in _
+  end in |- *.
+generalize dependent IHn0.
+case re.
+intros x s; destruct s.
+intros.
+generalize dependent (extend_prop2 a).
+generalize dependent (extend_prop a).
+case (try_extend a).
+intros x' s; destruct s.
+intros.
+inversion_clear H4; inversion_clear H3.
+inversion_clear H4; inversion_clear H6(*;Inversion_clear H7*);
+ inversion_clear H8.
+case (classic (span (seq_set x0) =' full W in part_set W)).
+intro.
+generalize dependent (H9 H8); intro p; generalize dependent (H4 p); intro q.
+apply Trans with (span_set (seq_set x0)); auto with algebra.
+generalize dependent span_comp; intro r; simpl in r; simpl in |- *.
+apply (r _ W).
+generalize dependent seq_equal_seq_set.
+simpl in |- *.
+auto with algebra.
 
-Intro.
-Assert ~(lt x n0).
-Intro;Repeat Red in H8;Apply H8.
-Apply IHn0;Auto with algebra arith.
-Apply False_ind.
-Generalize Dependent (H11 H8);Intro p;Simpl in p;Generalize Dependent H5.
-Rewrite p;Intro.
-Red in H12;Apply H12;Auto with arith.
+intro.
+assert (~ x < n0).
+intro; repeat red in H8; apply H8.
+apply IHn0; auto with algebra arith.
+apply False_ind.
+generalize dependent (H11 H8); intro p; simpl in p; generalize dependent H5.
+rewrite p; intro.
+red in H12; apply H12; auto with arith.
 
-Generalize Dependent (H0 n).
-Generalize Dependent (H2 n).
-Generalize Dependent (H3 n).
+generalize dependent (H0 n).
+generalize dependent (H2 n).
+generalize dependent (H3 n).
 
-Case (rep_ext n H).
-Intros x s;NewDestruct s.
-Intros.
-Case (le_lt_or_eq ?? H6).
-Intro.
-Split;Inversion_clear a;Auto.
-Red;Auto.
+case (rep_ext n H).
+intros x s; destruct s.
+intros.
+case (le_lt_or_eq _ _ H6).
+intro.
+split; inversion_clear a; auto.
+red in |- *; auto.
 
-Clear H4 H3 H2 H1 H0 H.
-Intro.
-Move H after x0.
-Generalize Dependent x0.
-Rewrite H.
-Clear H6 H x;Intros.
-Split;Inversion_clear a;Auto.
+clear H4 H3 H2 H1 H0 H.
+intro.
+move H after x0.
+generalize dependent x0.
+rewrite H.
+clear H6 H x; intros.
+split; inversion_clear a; auto.
 
-Assert (lin_indep (inject_subsets (seq_set x0))).
-Red;Repeat Red in H;Intro;Apply H.
-Elim (inject_subsets_lin_dep (seq_set x0));Intuition.
-Assert (has_n_elements n (inject_subsets (seq_set x0))).
-Apply inject_subsets_preserves_has_n_elements.
-Auto.
-Red.
+assert (lin_indep (inject_subsets (seq_set x0))).
+red in |- *; repeat red in H; intro; apply H.
+elim (inject_subsets_lin_dep (seq_set x0)); intuition.
+assert (has_n_elements n (inject_subsets (seq_set x0))).
+apply inject_subsets_preserves_has_n_elements.
+auto.
+red in |- *.
 
-Assert (is_basis (inject_subsets (seq_set x0))).
-Generalize Dependent (dim_prf V).
-Fold n.
-Intros.
-Inversion_clear H3.
-Apply (finite_bases_always_equally_big H4);Auto with algebra.
-Red in H3.
-Inversion_clear H3.
-Red in H4.
+assert (is_basis (inject_subsets (seq_set x0))).
+generalize dependent (dim_prf V).
+fold n in |- *.
+intros.
+inversion_clear H3.
+apply (finite_bases_always_equally_big H4); auto with algebra.
+red in H3.
+inversion_clear H3.
+red in H4.
 
-Assert (span_ind (inject_subsets (seq_set x0)))='(full V) in(part_set V).
-Apply Trans with ((span 2!V (inject_subsets (seq_set x0)))::(part_set V));Auto with algebra.
+assert (span_ind (inject_subsets (seq_set x0)) =' full V in part_set V).
+apply Trans with (span (V:=V) (inject_subsets (seq_set x0)):part_set V);
+ auto with algebra.
 
-Apply Trans with ((span_ind (seq_set x0))::(part_set W));Auto with algebra.
-Simpl.
-Red.
-Split;Simpl;Auto;Intros _.
-Simpl in H3;Red in H3.
-Elim (H3 (subtype_elt x));Intros.
-Simpl in H8.
-Generalize (H8 I);Clear H8 H7 H6 H4 H2 H1 H0 H H5.
-Intro.
-Inversion_clear H.
-Unfold subtype_image_equal.
+apply Trans with (span_ind (seq_set x0):part_set W); auto with algebra.
+simpl in |- *.
+red in |- *.
+split; simpl in |- *; auto; intros _.
+simpl in H3; red in H3.
+elim (H3 (subtype_elt x)); intros.
+simpl in H8.
+generalize (H8 I); clear H8 H7 H6 H4 H2 H1 H0 H H5.
+intro.
+inversion_clear H.
+unfold subtype_image_equal in |- *.
 
-Exists (span_ind_uninject x1).
+exists (span_ind_uninject x1).
 
-Apply Trans with (span_ind_injection x1);Auto with algebra.
-Apply span_ind_uninject_prop.
+apply Trans with (span_ind_injection x1); auto with algebra.
+apply span_ind_uninject_prop.
 Qed.
 End MAIN.

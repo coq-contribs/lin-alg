@@ -1,5 +1,6 @@
 (** %\subsection*{ examples :  trivial\_spaces.v }%*)
 Set Implicit Arguments.
+Unset Strict Implicit.
 Require Export bases_finite_dim.
 Require Export Singleton.
 Require Export alt_build_vecsp.
@@ -11,127 +12,131 @@ Require Export alt_build_vecsp.
  that element as the zero vector *)
 
 Section MAIN.
-Variable A:Setoid.
-Variable a:A.
+Variable A : Setoid.
+Variable a : A.
 
-Local T:=(single a).
+Let T := single a.
 
-Definition Tplus : (Map2 T T T).
-Apply Build_Map2 with [t,t':(single a)](Build_subtype ((Refl a)::(Pred_fun (single a) a))).
-Red.
-Intros.
-Auto with algebra.
+Definition Tplus : Map2 T T T.
+apply
+ Build_Map2
+  with (fun t t' : single a => Build_subtype (Refl a:Pred_fun (single a) a)).
+red in |- *.
+intros.
+auto with algebra.
 Defined.
 
-Definition Tzero : T := (Build_subtype ((Refl a)::(Pred_fun (single a) a))).
+Definition Tzero : T := Build_subtype (Refl a:Pred_fun (single a) a).
 
-Definition Tminus : (Map T T).
-Apply Build_Map with [t:T]t.
-Red.
-Auto.
+Definition Tminus : Map T T.
+apply Build_Map with (fun t : T => t).
+red in |- *.
+auto.
 Defined.
 
-Variable F:field.
+Variable F : field.
 
-Definition Tmult : (Map2 F T T).
-Apply Build_Map2 with [f:F;t:T]t.
-Red.
-Auto.
+Definition Tmult : Map2 F T T.
+apply Build_Map2 with (fun (f : F) (t : T) => t).
+red in |- *.
+auto.
 Defined.
 
-Definition trivvecsp : (vectorspace F).
-Apply alt_Build_vectorspace with T Tplus Tmult Tzero Tminus;Red;Auto with algebra.
-Simpl.
-Red.
-Intro;NewDestruct x.
-Simpl in subtype_prf.
-Simpl.
-Auto with algebra.
-Simpl.
-Red.
-Simpl.
-Intros;NewDestruct x;Simpl in subtype_prf;Simpl;Auto with algebra.
+Definition trivvecsp : vectorspace F.
+apply alt_Build_vectorspace with T Tplus Tmult Tzero Tminus; red in |- *;
+ auto with algebra.
+simpl in |- *.
+red in |- *.
+intro; destruct x.
+simpl in subtype_prf.
+simpl in |- *.
+auto with algebra.
+simpl in |- *.
+red in |- *.
+simpl in |- *.
+intros; destruct x; simpl in subtype_prf; simpl in |- *; auto with algebra.
 Defined.
 End MAIN.
 
 Section basis.
-Variable F:field.
+Variable F : field.
 Require Export bases.
-Variable A:Setoid.
-Variable a:A.
-Definition triv_basis : (basis (trivvecsp a F)).
-Apply Build_basis with (empty (trivvecsp a F)).
-Red.
-Split.
-Red.
-Simpl.
-Red.
-Simpl.
-Split;Auto;Intros _.
-Red.
-Exists O.
-Exists (empty_seq F).
-Exists (empty_seq (empty (single a))).
-Simpl.
-NewDestruct x.
-Red.
-Simpl.
-Simpl in subtype_prf.
-Auto.
-Apply empty_lin_indep.
+Variable A : Setoid.
+Variable a : A.
+Definition triv_basis : basis (trivvecsp a F).
+apply Build_basis with (empty (trivvecsp a F)).
+red in |- *.
+split.
+red in |- *.
+simpl in |- *.
+red in |- *.
+simpl in |- *.
+split; auto; intros _.
+red in |- *.
+exists 0.
+exists (empty_seq F).
+exists (empty_seq (empty (single a))).
+simpl in |- *.
+destruct x.
+red in |- *.
+simpl in |- *.
+simpl in subtype_prf.
+auto.
+apply empty_lin_indep.
 Defined.
 
 (* More generally: *)
-Definition trivial_basis : (V:(vectorspace F))
-  (full V)='(single (zero V)) -> (basis V).
-Intros.
-Apply Build_basis with (empty V).
-Red.
-Split.
-2:Apply empty_lin_indep.
-Red.
-Apply Trans with (single (zero V));Auto with algebra.
-Simpl.
-Red.
-Simpl.
-Split;Intros.
-Red in H0.
-Inversion_clear H0.
-Inversion_clear H1.
-Inversion_clear H0.
-Assert x0='O.
-Generalize no_seq_n_empty;Intro p.
-Apply (p ? V (empty V) (Refl (empty V)) x2).
-Simpl in H0.
-Move H0 after x1.
-Generalize Dependent x0.
-Intros x0 H0.
-Rewrite H0.
-Clear H0 x0.
-Simpl.
-Auto.
+Definition trivial_basis :
+  forall V : vectorspace F, full V =' single (zero V) in _ -> basis V.
+intros.
+apply Build_basis with (empty V).
+red in |- *.
+split.
+2: apply empty_lin_indep.
+red in |- *.
+apply Trans with (single (zero V)); auto with algebra.
+simpl in |- *.
+red in |- *.
+simpl in |- *.
+split; intros.
+red in H0.
+inversion_clear H0.
+inversion_clear H1.
+inversion_clear H0.
+assert (x0 =' 0 in _).
+generalize no_seq_n_empty; intro p.
+apply (p _ V (empty V) (Refl (empty V)) x2).
+simpl in H0.
+move H0 after x1.
+generalize dependent x0.
+intros x0 H0.
+rewrite H0.
+clear H0 x0.
+simpl in |- *.
+auto.
 
-Apply is_lin_comb_comp with (zero V) (empty V);Auto with algebra.
-Red.
-Exists O.
-Simpl.
-Exists (empty_seq F).
-Exists (empty_seq (empty V)).
-Auto with algebra.
+apply is_lin_comb_comp with (zero V) (empty V); auto with algebra.
+red in |- *.
+exists 0.
+simpl in |- *.
+exists (empty_seq F).
+exists (empty_seq (empty V)).
+auto with algebra.
 Defined.
 
 
-Lemma trivial_then_has_dim_zero : (V:(vectorspace F)) (full V)='(single (zero V)) -> (has_dim O V).
-Intros.
-Red.
-Exists (trivial_basis H).
-Simpl.
-Apply empty_then_has_zero_elements;Auto with algebra.
+Lemma trivial_then_has_dim_zero :
+ forall V : vectorspace F, full V =' single (zero V) in _ -> has_dim 0 V.
+intros.
+red in |- *.
+exists (trivial_basis H).
+simpl in |- *.
+apply empty_then_has_zero_elements; auto with algebra.
 Qed.
 
-Lemma trivvecsp_has_dim_zero : (has_dim O (trivvecsp a F)).
-Red.
-Exists triv_basis.
-Apply has_n_elements_comp with O (empty (trivvecsp a F));Auto with algebra.
+Lemma trivvecsp_has_dim_zero : has_dim 0 (trivvecsp a F).
+red in |- *.
+exists triv_basis.
+apply has_n_elements_comp with 0 (empty (trivvecsp a F)); auto with algebra.
 Qed.
 End basis.
