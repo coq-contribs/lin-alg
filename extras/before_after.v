@@ -1,108 +1,134 @@
 (** %\subsection*{ extras :  before\_after.v }%*)
 Set Implicit Arguments.
+Unset Strict Implicit.
 Require Export omit_facts.
 
 (** - Some stuff I thought would be useful some day but wasn't *)
 
-Definition before [N,N':nat;i:(fin N);j:(fin N')] := (lt (index i) (index j)).
-Definition after  [N,N':nat;i:(fin N);j:(fin N')] := (gt (index i) (index j)).
+Definition before (N N' : nat) (i : fin N) (j : fin N') := index i < index j.
+Definition after (N N' : nat) (i : fin N) (j : fin N') := index i > index j.
 
-Definition notbefore [N,N':nat;i:(fin N);j:(fin N')] := (index i)=(index j) \/ (after i j).
-Definition notafter [N,N':nat;i:(fin N);j:(fin N')] := (before i j)\/(index i)=(index j).
+Definition notbefore (N N' : nat) (i : fin N) (j : fin N') :=
+  index i = index j \/ after i j.
+Definition notafter (N N' : nat) (i : fin N) (j : fin N') :=
+  before i j \/ index i = index j.
 
-Lemma decide_fin : (N,N':nat;i:(fin N);i':(fin N')) (before i i') \/ (index i)=(index i') \/ (after i i').
-Simpl.
-Unfold before after.
-Intros.
-Case i;Case i'.
-Simpl.
-Intros x l x0 l0.
-Clear l0 l i' i N N'.
-Induction x;Induction x0;Unfold gt;Auto with arith.
-Case Hrecx.
-Auto with arith.
-Intro.
-Unfold gt;Case H.
-Intro;Left.
-Rewrite H0.
-Auto.
-Unfold gt.
-Intro.
-Right.
-Case H0.
-Auto.
-Intros.
-Cut (lt (S x) (S m))\/(S x)=(S m).
-Intro.
-Case H2.
-Auto.
-Auto.
-Left.
-Auto with arith.
+Lemma decide_fin :
+ forall (N N' : nat) (i : fin N) (i' : fin N'),
+ before i i' \/ index i = index i' \/ after i i'.
+simpl in |- *.
+unfold before, after in |- *.
+intros.
+case i; case i'.
+simpl in |- *.
+intros x l x0 l0.
+clear l0 l i' i N N'.
+induction  x as [| x Hrecx]; induction  x0 as [| x0 Hrecx0];
+ unfold gt in |- *; auto with arith.
+case Hrecx.
+auto with arith.
+intro.
+unfold gt in |- *; case H.
+intro; left.
+rewrite H0.
+auto.
+unfold gt in |- *.
+intro.
+right.
+case H0.
+auto.
+intros.
+cut (S x < S m \/ S x = S m).
+intro.
+case H2.
+auto.
+auto.
+left.
+auto with arith.
 Qed.
 
-Lemma decide_before :(N,N':nat;i:(fin N);j:(fin N')) (before i j)\/(notbefore i j). 
-Unfold notbefore.
-Apply decide_fin.
+Lemma decide_before :
+ forall (N N' : nat) (i : fin N) (j : fin N'), before i j \/ notbefore i j. 
+unfold notbefore in |- *.
+apply decide_fin.
 Qed.
 
-Lemma decide_after :(N,N':nat;i:(fin N);j:(fin N')) (after i j)\/(notafter i j).  
-Unfold notafter.
-Intros.
-Case (decide_before i j).
-Auto.
-Unfold notbefore.
-Tauto.
+Lemma decide_after :
+ forall (N N' : nat) (i : fin N) (j : fin N'), after i j \/ notafter i j.  
+unfold notafter in |- *.
+intros.
+case (decide_before i j).
+auto.
+unfold notbefore in |- *.
+tauto.
 Qed.
 
-Lemma seq_properties_split_before_eq_after : (A:Setoid;n:nat;v:(seq n A);i:(fin n);P:(Predicate A))
-((j:(fin n))(before j i)->(Pred_fun P (v j))) -> (Pred_fun P (v i)) -> ((j:(fin n))(after j i)->(Pred_fun P (v j))) -> (j:(fin n))(Pred_fun P (v j)).
-Intros.
-Case (decide_fin j i);Auto.
-Intro.
-Case H2;Auto.
-Generalize H0.
-Elim P.
-Simpl.
-Unfold pred_compatible.
-Intros.
-(Apply Pred_compatible_prf with (v i);Auto with algebra).
-Qed.
-
-
-Lemma predicate_split_seq_before_notbefore : (A:Setoid;n:nat;v:(seq n A);i:(fin n);P:(Predicate A))
-((j:(fin n))(before j i)->(Pred_fun P (v j))) -> ((j:(fin n))(notbefore j i)->(Pred_fun P (v j))) -> (j:(fin n))(Pred_fun P (v j)).
-Intros.
-Case (decide_before j i);Auto.
-Qed.
-
-Lemma predicate_split_seq_after_notafter : (A:Setoid;n:nat;v:(seq n A);i:(fin n);P:(Predicate A))
-((j:(fin n))(after j i)->(Pred_fun P (v j))) -> ((j:(fin n))(notafter j i)->(Pred_fun P (v j))) -> (j:(fin n))(Pred_fun P (v j)).
-Intros.
-Case (decide_after j i);Auto.
-Qed.
-
-Lemma seq_properties_split_before_notbefore : (A:Setoid;n:nat;v:(seq n A);i:(fin n);P:A->Prop)
-((j:(fin n))(before j i)->(P (v j))) -> ((j:(fin n))(notbefore j i)->(P (v j))) -> (j:(fin n))(P (v j)).
-Intros.
-Case (decide_before j i);Auto.
-Qed.
-
-Lemma seq_properties_split_after_notafter : (A:Setoid;n:nat;v:(seq n A);i:(fin n);P:A->Prop)
-((j:(fin n))(after j i)->(P (v j))) -> ((j:(fin n))(notafter j i)->(P (v j))) -> (j:(fin n))(P (v j)).
-Intros.
-Case (decide_after j i);Auto.
+Lemma seq_properties_split_before_eq_after :
+ forall (A : Setoid) (n : nat) (v : seq n A) (i : fin n) (P : Predicate A),
+ (forall j : fin n, before j i -> Pred_fun P (v j)) ->
+ Pred_fun P (v i) ->
+ (forall j : fin n, after j i -> Pred_fun P (v j)) ->
+ forall j : fin n, Pred_fun P (v j).
+intros.
+case (decide_fin j i); auto.
+intro.
+case H2; auto.
+generalize H0.
+elim P.
+simpl in |- *.
+unfold pred_compatible in |- *.
+intros.
+apply Pred_compatible_prf with (v i); auto with algebra.
 Qed.
 
 
-Definition next : (n:nat)(fin n)->(fin (S n)) := [n:nat;i:(fin n)]Cases i of 
- (Build_finiteT ni Hi)=>(Build_finiteT (lt_n_S??Hi)) end.
-Definition prev : (n:nat)(i:(fin (S n)))~i='(Build_finiteT (lt_O_Sn n))->(fin n).
-Intros n i;Case i.
-Intro x;Case x.
-Simpl.
-Intros.
-Absurd O=O;Auto.
-Intros.
-Exact (Build_finiteT (lt_S_n??in_range_prf)).
+Lemma predicate_split_seq_before_notbefore :
+ forall (A : Setoid) (n : nat) (v : seq n A) (i : fin n) (P : Predicate A),
+ (forall j : fin n, before j i -> Pred_fun P (v j)) ->
+ (forall j : fin n, notbefore j i -> Pred_fun P (v j)) ->
+ forall j : fin n, Pred_fun P (v j).
+intros.
+case (decide_before j i); auto.
+Qed.
+
+Lemma predicate_split_seq_after_notafter :
+ forall (A : Setoid) (n : nat) (v : seq n A) (i : fin n) (P : Predicate A),
+ (forall j : fin n, after j i -> Pred_fun P (v j)) ->
+ (forall j : fin n, notafter j i -> Pred_fun P (v j)) ->
+ forall j : fin n, Pred_fun P (v j).
+intros.
+case (decide_after j i); auto.
+Qed.
+
+Lemma seq_properties_split_before_notbefore :
+ forall (A : Setoid) (n : nat) (v : seq n A) (i : fin n) (P : A -> Prop),
+ (forall j : fin n, before j i -> P (v j)) ->
+ (forall j : fin n, notbefore j i -> P (v j)) -> forall j : fin n, P (v j).
+intros.
+case (decide_before j i); auto.
+Qed.
+
+Lemma seq_properties_split_after_notafter :
+ forall (A : Setoid) (n : nat) (v : seq n A) (i : fin n) (P : A -> Prop),
+ (forall j : fin n, after j i -> P (v j)) ->
+ (forall j : fin n, notafter j i -> P (v j)) -> forall j : fin n, P (v j).
+intros.
+case (decide_after j i); auto.
+Qed.
+
+
+Definition next (n : nat) (i : fin n) : fin (S n) :=
+  match i with
+  | Build_finiteT ni Hi => Build_finiteT (lt_n_S _ _ Hi)
+  end.
+Definition prev :
+  forall (n : nat) (i : fin (S n)),
+  ~ i =' Build_finiteT (lt_O_Sn n) in _ -> fin n.
+intros n i; case i.
+intro x; case x.
+simpl in |- *.
+intros.
+absurd (0 = 0); auto.
+intros.
+exact (Build_finiteT (lt_S_n _ _ in_range_prf)).
 Defined.
