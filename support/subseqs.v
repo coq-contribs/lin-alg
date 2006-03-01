@@ -1,51 +1,56 @@
 (** %\subsection*{ support :  subseqs.v }%*)
 Set Implicit Arguments.
+Unset Strict Implicit.
 Require Export conshdtl.
 
 (** - subsequences, inductively defined *)
 Section defs.
-Variable A:Setoid.
+Variable A : Setoid.
 
-Inductive is_subseq : (m:Nat;w:(seq m A); n:Nat;v:(seq n A)) Prop :=
-  is_subseq_empty : (n:Nat;v:(seq n A))
-     (w:(seq O A)) (is_subseq w v)
-| is_subseq_of_tail : (m:Nat;w:(seq m A); n:Nat;v:(seq n A))
-     (is_subseq w v)->(a:A)(is_subseq w a;;v)
-| is_subseq_cons : (m:Nat;w:(seq m A); n:Nat;v:(seq n A))
-     (is_subseq w v)->(a:A)(is_subseq a;;w a;;v)
-| is_subseq_comp : (m:Nat;w,w':(seq m A); n:Nat;v,v':(seq n A))
-     (is_subseq w' v')-> w='w'->v='v'->(is_subseq w v).
+Inductive is_subseq :
+forall (m : Nat) (w : seq m A) (n : Nat) (v : seq n A), Prop :=
+  | is_subseq_empty :
+      forall (n : Nat) (v : seq n A) (w : seq 0 A), is_subseq w v
+  | is_subseq_of_tail :
+      forall (m : Nat) (w : seq m A) (n : Nat) (v : seq n A),
+      is_subseq w v -> forall a : A, is_subseq w (a;; v)
+  | is_subseq_cons :
+      forall (m : Nat) (w : seq m A) (n : Nat) (v : seq n A),
+      is_subseq w v -> forall a : A, is_subseq (a;; w) (a;; v)
+  | is_subseq_comp :
+      forall (m : Nat) (w w' : seq m A) (n : Nat) (v v' : seq n A),
+      is_subseq w' v' -> w =' w' in _ -> v =' v' in _ -> is_subseq w v.
 
-Lemma subseq_has_right_elements : (m:Nat;w:(seq m A); n:Nat;v:(seq n A))
-  (is_subseq w v) -> (i:(fin m))(EXT i':(fin n) | (w i)='(v i')).
-Intros.
-NewInduction H.
-(Apply False_ind;Auto with algebra).
-Case (IHis_subseq i).
-Intros.
-NewDestruct x.
-Exists (Build_finiteT (lt_n_S ??in_range_prf)).
-(Apply Trans with (v (Build_finiteT in_range_prf));Auto with algebra).
-NewDestruct i;NewDestruct index.
-Exists (Build_finiteT (lt_O_Sn n)).
-Auto with algebra.
-Generalize (IHis_subseq (Build_finiteT (lt_S_n ?? in_range_prf)));Intro.
-Inversion_clear H0.
-NewDestruct x.
-Exists (Build_finiteT(lt_n_S??in_range_prf0)).
-(Apply Trans with (v (Build_finiteT in_range_prf0));Auto with algebra).
-Generalize (IHis_subseq i).
-Intros.
-Inversion_clear H2.
-Exists x.
-(Apply Trans with (w' i);Auto with algebra).
-(Apply Trans with (v' x);Auto with algebra).
+Lemma subseq_has_right_elements :
+ forall (m : Nat) (w : seq m A) (n : Nat) (v : seq n A),
+ is_subseq w v -> forall i : fin m, exists i' : fin n, w i =' v i' in _.
+intros.
+induction H.
+apply False_ind; auto with algebra.
+case (IHis_subseq i).
+intros.
+destruct x.
+exists (Build_finiteT (lt_n_S _ _ in_range_prf)).
+apply Trans with (v (Build_finiteT in_range_prf)); auto with algebra.
+destruct i; destruct index as [| n0].
+exists (Build_finiteT (lt_O_Sn n)).
+auto with algebra.
+generalize (IHis_subseq (Build_finiteT (lt_S_n _ _ in_range_prf))); intro.
+inversion_clear H0.
+destruct x.
+exists (Build_finiteT (lt_n_S _ _ in_range_prf0)).
+apply Trans with (v (Build_finiteT in_range_prf0)); auto with algebra.
+generalize (IHis_subseq i).
+intros.
+inversion_clear H2.
+exists x.
+apply Trans with (w' i); auto with algebra.
+apply Trans with (v' x); auto with algebra.
 Qed.
 
-Lemma subseqs_are_not_longer : (m,n:Nat;w:(seq m A);v:(seq n A))
-  (is_subseq w v)->(le m n).
-Intros.
-NewInduction H;Simpl;Auto with algebra arith.
+Lemma subseqs_are_not_longer :
+ forall (m n : Nat) (w : seq m A) (v : seq n A), is_subseq w v -> m <= n.
+intros.
+induction H; simpl in |- *; auto with algebra arith.
 Qed.
 End defs.
-

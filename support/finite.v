@@ -1,5 +1,6 @@
 (** %\subsection*{ support :  finite.v }%*)
 Set Implicit Arguments.
+Unset Strict Implicit.
 Require Export Arith.
 Require Export equal_syntax.
 
@@ -8,9 +9,9 @@ Require Export equal_syntax.
  uniform approach *)
 
 Definition Nat : Setoid.
-Apply (Build_Setoid 2![i,j:nat]i=j).
-Split;Try Split;Red;Unfold app_rel;Simpl;Auto.
-Intros;Transitivity y;Auto.
+apply (Build_Setoid (Equal:=fun i j : nat => i = j)).
+split; try split; red in |- *; unfold app_rel in |- *; simpl in |- *; auto.
+intros; transitivity y; auto.
 Defined.
 
 
@@ -23,9 +24,7 @@ Defined.
  - finiteT will serve as the Type on which we base our finite 
  setoids [(fin N)] = $\{0...N-1\} = \{ n \in N | n<N \}$. *)
 
-Record finiteT [N:Nat] : Type := 
-  {index : nat;
-   in_range_prf : (lt index N)}.
+Record finiteT (N : Nat) : Type :=  {index : nat; in_range_prf : index < N}.
 
 
 
@@ -38,111 +37,117 @@ Record finiteT [N:Nat] : Type :=
 %\label{fin}% *)
 
 
-Definition fin : Nat->Setoid.
-Intro N.
-Apply (!Build_Setoid (finiteT N) [n,m:(finiteT N)](index n)=(index m)).
-Red.
-Split.
-Red.
-Intro.
-Red.
-Reflexivity.
-Red.
-Split.
-Red.
-Intros.
-Red in H.
-Red in H0.
-Red.
-Transitivity (index y).
-Assumption.
-Assumption.
-Red.
-Intros.
-Red in H.
-Red.
-Symmetry.
-Assumption.
+Definition fin : Nat -> Setoid.
+intro N.
+apply
+ (Build_Setoid (Carrier:=finiteT N)
+    (Equal:=fun n m : finiteT N => index n = index m)).
+red in |- *.
+split.
+red in |- *.
+intro.
+red in |- *.
+reflexivity.
+red in |- *.
+split.
+red in |- *.
+intros.
+red in H.
+red in H0.
+red in |- *.
+transitivity (index y).
+assumption.
+assumption.
+red in |- *.
+intros.
+red in H.
+red in |- *.
+symmetry  in |- *.
+assumption.
 Defined.
 
-Lemma fin_equation : (n,i,j:nat;Hi:(lt i n);Hj:(lt j n)) 
-  i=j -> (Build_finiteT Hi)='(Build_finiteT Hj) in (fin n).
-Intros.
-Simpl.
-Auto.
+Lemma fin_equation :
+ forall (n i j : nat) (Hi : i < n) (Hj : j < n),
+ i = j -> Build_finiteT Hi =' Build_finiteT Hj in fin n.
+intros.
+simpl in |- *.
+auto.
 Qed.
 
 (* This formalisation is heavily dependent on Loic Pottier's algebra contribution *)
 (* and therefore relies heavily on the algebra Hints database as well. *)
 (* We feel free to extend it: *)
 
-Hints Resolve fin_equation : algebra.
+Hint Resolve fin_equation: algebra.
 
-Lemma fin_decidable : (n:Nat;i,i':(fin n)) i =' i' \/ ~i=' i'.
-Intros.
-Simpl.
-Cut (k,l:nat)k=l\/~k=l.
-Intro.
-Auto.
-Clear i' i n.
-Double Induction k l.
-Left;Auto.
-Intros;Right.
-Unfold not.
-Intro.
-Inversion H0.
-Intros;Right.
-Unfold not.
-Intro.
-Inversion H0.
-Intros.
-Elim (H0 n).
-Auto.
-Auto.
+Lemma fin_decidable :
+ forall (n : Nat) (i i' : fin n), i =' i' in _ \/ ~ i =' i' in _.
+intros.
+simpl in |- *.
+cut (forall k l : nat, k = l \/ k <> l).
+intro.
+auto.
+clear i' i n.
+double induction k l.
+left; auto.
+intros; right.
+unfold not in |- *.
+intro.
+inversion H0.
+intros; right.
+unfold not in |- *.
+intro.
+inversion H0.
+intros.
+elim (H0 n).
+auto.
+auto.
 Qed.
 
 
-Lemma fin_O_nonexistent : (fin (0))->False.
-NewDestruct 1.
-Inversion_clear in_range_prf0.
+Lemma fin_O_nonexistent : fin 0 -> False.
+destruct 1.
+inversion_clear in_range_prf0.
 Qed.
 
-Hints Resolve fin_O_nonexistent : algebra.
+Hint Resolve fin_O_nonexistent: algebra.
 
-Lemma fin_S_O_unique : (i,j:(fin (1)))i='j.
-Intro.
-Case i.
-Intro x.
-Case x.
-Intros l j.
-Case j.
-Intro x0.
-Case x0.
-Simpl.
-Auto.
-Intros.
-Inversion in_range_prf0.
-Inversion H0.
-Intros.
-Inversion in_range_prf0.
-Inversion H0.
+Lemma fin_S_O_unique : forall i j : fin 1, i =' j in _.
+intro.
+case i.
+intro x.
+case x.
+intros l j.
+case j.
+intro x0.
+case x0.
+simpl in |- *.
+auto.
+intros.
+inversion in_range_prf0.
+inversion H0.
+intros.
+inversion in_range_prf0.
+inversion H0.
 Qed.
 
-Hints Resolve fin_S_O_unique : algebra.
+Hint Resolve fin_S_O_unique: algebra.
 
 (** - A sequence is just a setoid function from (fin n) to A: 
 %\label{seq}% *)
-Definition seq [n:Nat;A:Setoid]:=(MAP (fin n) A).
+Definition seq (n : Nat) (A : Setoid) := MAP (fin n) A.
 
 (* Somehow this is necessary: *)
-Lemma toSeq : (A:Setoid;n:Nat;v,v':(Map (fin n) A)) 
-  v =' v' in (seq??) -> v =' v' in (MAP??).
-Auto.
+Lemma toSeq :
+ forall (A : Setoid) (n : Nat) (v v' : Map (fin n) A),
+ v =' v' in seq _ _ -> v =' v' in MAP _ _.
+auto.
 Qed.
 
-Lemma toMap : (A:Setoid;n:Nat;v,v':(Map (fin n) A)) 
-  v='v' in (MAP??) -> v='v' in (seq??).
-Auto.
+Lemma toMap :
+ forall (A : Setoid) (n : Nat) (v v' : Map (fin n) A),
+ v =' v' in MAP _ _ -> v =' v' in seq _ _.
+auto.
 Qed.
 
-Hints Resolve toSeq toMap : algebra.
+Hint Resolve toSeq toMap: algebra.

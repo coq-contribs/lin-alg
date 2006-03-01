@@ -1,292 +1,375 @@
 (** %\subsection*{ support :  distinct\_facts.v }%*)
 Set Implicit Arguments.
+Unset Strict Implicit.
 Require Export omit_facts.
 Require Export seq_set_seq.
 Require Export distinct.
 
-Lemma distinct_cons : (A:Setoid;n:Nat;v:(seq n A))
-  (distinct v) -> (a:A) ((i:(fin n)) ~a='(v i)) -> (distinct a;;v).
-Intros.
-Red.
-Intro;Case i;Clear i;Intro i;Case i;Clear i.
-Intros hi j;Case j;Clear j;Intro j;Case j;Clear j.
-Intros.
-Simpl in H1.
-Absurd O=O;Auto.
-Intros.
-Simpl.
-(Apply H0;Auto with algebra).
-Intros i hi j;Case j;Clear j;Intro j;Case j;Clear j.
-Intros.
-Simpl.
-Red;Intro;Red in H0.
-(Apply (H0 (Build_finiteT (lt_S_n??hi)));Auto with algebra).
-Intros j hj hij.
-Red in H.
-Simpl.
-(Apply H;Auto with algebra).
+Lemma distinct_cons :
+ forall (A : Setoid) (n : Nat) (v : seq n A),
+ distinct v ->
+ forall a : A, (forall i : fin n, ~ a =' v i in _) -> distinct (a;; v).
+intros.
+red in |- *.
+intro; case i; clear i; intro i; case i; clear i.
+intros hi j; case j; clear j; intro j; case j; clear j.
+intros.
+simpl in H1.
+absurd (0 = 0); auto.
+intros.
+simpl in |- *.
+apply H0; auto with algebra.
+intros i hi j; case j; clear j; intro j; case j; clear j.
+intros.
+simpl in |- *.
+red in |- *; intro; red in H0.
+apply (H0 (Build_finiteT (lt_S_n _ _ hi))); auto with algebra.
+intros j hj hij.
+red in H.
+simpl in |- *.
+apply H; auto with algebra.
 Qed.
 
-Hints Resolve distinct_cons : algebra.
+Hint Resolve distinct_cons: algebra.
 
-Lemma Seqtl_preserves_distinct : (A:Setoid;n:Nat;v:(seq n A))
-  (distinct v) -> (distinct (Seqtl v)).
-Unfold distinct.
-Induction n.
-Simpl.
-Auto with algebra.
-Intros.
-Generalize H1;Clear H1.
-Case i;Case j.
-Intro x;Case x.
-Intros l x0;Case x0.
-Intros l0 H1.
-Simpl in H1.
-Absurd O=O;Auto.
-Intros n1 l0.
-Intro q;Clear q.
-Red;Red in H0.
-Intro.
-Cut (v (Build_finiteT (lt_n_S ?? l0)))=' (v (Build_finiteT (lt_n_S ?? l))).
-Intro.
-(Apply H0 with (Build_finiteT (lt_n_S (S n1) (pred (S n0)) l0)) (Build_finiteT (lt_n_S (0) (pred (S n0)) l));Auto with algebra).
-Simpl.
-Auto.
-(Apply Trans with ((Seqtl v) (Build_finiteT l0));Auto with algebra).
-Intros n1 l x0;Case x0.
-Intros l0 H1.
-Clear H1.
-Red;Intro.
-Cut (v (Build_finiteT (lt_n_S ?? l0)))=' (v (Build_finiteT (lt_n_S ?? l))).
-Intro.
-Red in H0.
-(Apply H0  with (Build_finiteT (lt_n_S ?? l0)) (Build_finiteT (lt_n_S ?? l));Auto with algebra).
-Simpl.
-Auto.
-(Apply Trans with ((Seqtl v) (Build_finiteT l0));Auto with algebra).
-Intros n2 l0.
-Simpl.
-Intros.
-(Apply H0;Auto with algebra).
+Lemma Seqtl_preserves_distinct :
+ forall (A : Setoid) (n : Nat) (v : seq n A),
+ distinct v -> distinct (Seqtl v).
+unfold distinct in |- *.
+simple induction n.
+simpl in |- *.
+auto with algebra.
+intros.
+generalize H1; clear H1.
+case i; case j.
+intro x; case x.
+intros l x0; case x0.
+intros l0 H1.
+simpl in H1.
+absurd (0 = 0); auto.
+intros n1 l0.
+intro q; clear q.
+red in |- *; red in H0.
+intro.
+cut
+ (v (Build_finiteT (lt_n_S _ _ l0)) =' v (Build_finiteT (lt_n_S _ _ l)) in _).
+intro.
+apply
+ H0
+  with
+    (Build_finiteT (lt_n_S (S n1) (pred (S n0)) l0))
+    (Build_finiteT (lt_n_S 0 (pred (S n0)) l)); auto with algebra.
+simpl in |- *.
+auto.
+apply Trans with (Seqtl v (Build_finiteT l0)); auto with algebra.
+intros n1 l x0; case x0.
+intros l0 H1.
+clear H1.
+red in |- *; intro.
+cut
+ (v (Build_finiteT (lt_n_S _ _ l0)) =' v (Build_finiteT (lt_n_S _ _ l)) in _).
+intro.
+red in H0.
+apply H0 with (Build_finiteT (lt_n_S _ _ l0)) (Build_finiteT (lt_n_S _ _ l));
+ auto with algebra.
+simpl in |- *.
+auto.
+apply Trans with (Seqtl v (Build_finiteT l0)); auto with algebra.
+intros n2 l0.
+simpl in |- *.
+intros.
+apply H0; auto with algebra.
 Qed.
 
-Hints Resolve Seqtl_preserves_distinct : algebra.
+Hint Resolve Seqtl_preserves_distinct: algebra.
 
-Lemma omit_preserves_distinct : (A:Setoid;n:Nat;v:(seq (S n) A))
-  (distinct v) -> (i:(fin (S n)))(distinct (omit v i)).
-Induction n.
-Intros.
-Red.
-Inversion i0.
-Inversion in_range_prf.
+Lemma omit_preserves_distinct :
+ forall (A : Setoid) (n : Nat) (v : seq (S n) A),
+ distinct v -> forall i : fin (S n), distinct (omit v i).
+simple induction n.
+intros.
+red in |- *.
+inversion i0.
+inversion in_range_prf.
 
-Intros.
-Case i.
-Intro x;Case x.
-Intro l.
-(Apply distinct_comp with (Seqtl v);Auto with algebra).
+intros.
+case i.
+intro x; case x.
+intro l.
+apply distinct_comp with (Seqtl v); auto with algebra.
 
-Intros n1 l.
-(Apply distinct_comp with (head v);;(omit (Seqtl v) (Build_finiteT (lt_S_n??l)));Auto with algebra).
-Unfold distinct in H H0.
-Unfold distinct. 
-Intros i0 j.
-Case i0.
-Case j.
-Clear x.
-Intro x;Case x.
-Intros p x';Case x'.
-Intros p' H'.
-Simpl in H'.
-Absurd O=O;Auto.
-Intros n2 p' q;Clear q.
-Red;Red in H0;Intro.
-Generalize (omit_removes (Seqtl v) (Build_finiteT (lt_S_n??l)) (Build_finiteT (lt_S_n??p'))).
-Intro k;Inversion_clear k.
-NewDestruct x0.
-(Apply H0 with (Build_finiteT (lt_O_Sn (S n0))) (Build_finiteT (lt_n_S??in_range_prf));Auto with algebra).
-Simpl.
-Auto.
-(Apply Trans with (head v);Auto with algebra).
-(Apply Trans with (Seqtl v (Build_finiteT in_range_prf));Auto with algebra).
-(Apply Trans with ((head v);;(omit (Seqtl v) (Build_finiteT (lt_S_n n1 (S n0) l))) (Build_finiteT p'));Auto with algebra).
+intros n1 l.
+apply
+ distinct_comp with (head v;; omit (Seqtl v) (Build_finiteT (lt_S_n _ _ l)));
+ auto with algebra.
+unfold distinct in H, H0.
+unfold distinct in |- *. 
+intros i0 j.
+case i0.
+case j.
+clear x.
+intro x; case x.
+intros p x'; case x'.
+intros p' H'.
+simpl in H'.
+absurd (0 = 0); auto.
+intros n2 p' q; clear q.
+red in |- *; red in H0; intro.
+generalize
+ (omit_removes (Seqtl v) (Build_finiteT (lt_S_n _ _ l))
+    (Build_finiteT (lt_S_n _ _ p'))).
+intro k; inversion_clear k.
+destruct x0.
+apply
+ H0
+  with
+    (Build_finiteT (lt_O_Sn (S n0)))
+    (Build_finiteT (lt_n_S _ _ in_range_prf)); auto with algebra.
+simpl in |- *.
+auto.
+apply Trans with (head v); auto with algebra.
+apply Trans with (Seqtl v (Build_finiteT in_range_prf)); auto with algebra.
+apply
+ Trans
+  with
+    ((head v;; omit (Seqtl v) (Build_finiteT (lt_S_n n1 (S n0) l)))
+       (Build_finiteT p')); auto with algebra.
 
-Intros n2 l1 x1.
-Case x1.
-Intros l2 H2.
-Clear H2.
-Cut ~((omit (Seqtl v) (Build_finiteT (lt_S_n n1 (S n0) l))) (Build_finiteT (lt_S_n ?? l1)))='(head v).
-Unfold head.
-Auto with algebra.
-Red.
-Intro.
-Generalize (omit_removes (Seqtl v) (Build_finiteT (lt_S_n n1 (S n0) l)) (Build_finiteT (lt_S_n n2 n0 l1))).
-Intro.
-Inversion_clear X.
-NewDestruct x0.
-Cut ((Seqtl v) (Build_finiteT in_range_prf))='(head v).
-Intros.
-Cut (v (Build_finiteT (lt_n_S??in_range_prf)))='(head v).
-Unfold head.
-Intros.
-Cut ~(Build_finiteT (lt_n_S index (S n0) in_range_prf))='(Build_finiteT (lt_O_Sn (S n0)))in(fin?).
-Intro.
-Red in H0.
-Apply H0 with (Build_finiteT (lt_n_S index (S n0) in_range_prf)) (Build_finiteT (lt_O_Sn (S n0)));Auto.
-Simpl.
-Auto.
-Auto with algebra.
-(Apply Trans with ((omit (Seqtl v) (Build_finiteT (lt_S_n n1 (S n0) l))) (Build_finiteT (lt_S_n n2 n0 l1)));Auto with algebra).
+intros n2 l1 x1.
+case x1.
+intros l2 H2.
+clear H2.
+cut
+ (~
+  omit (Seqtl v) (Build_finiteT (lt_S_n n1 (S n0) l))
+    (Build_finiteT (lt_S_n _ _ l1)) =' head v in _).
+unfold head in |- *.
+auto with algebra.
+red in |- *.
+intro.
+generalize
+ (omit_removes (Seqtl v) (Build_finiteT (lt_S_n n1 (S n0) l))
+    (Build_finiteT (lt_S_n n2 n0 l1))).
+intro.
+inversion_clear X.
+destruct x0.
+cut (Seqtl v (Build_finiteT in_range_prf) =' head v in _).
+intros.
+cut (v (Build_finiteT (lt_n_S _ _ in_range_prf)) =' head v in _).
+unfold head in |- *.
+intros.
+cut
+ (~
+  Build_finiteT (lt_n_S index (S n0) in_range_prf) ='
+  Build_finiteT (lt_O_Sn (S n0)) in fin _).
+intro.
+red in H0.
+apply
+ H0
+  with
+    (Build_finiteT (lt_n_S index (S n0) in_range_prf))
+    (Build_finiteT (lt_O_Sn (S n0))); auto.
+simpl in |- *.
+auto.
+auto with algebra.
+apply
+ Trans
+  with
+    (omit (Seqtl v) (Build_finiteT (lt_S_n n1 (S n0) l))
+       (Build_finiteT (lt_S_n n2 n0 l1))); auto with algebra.
 
-Intros n3 l0 H2.
-Simpl in H2.
-Cut ~((omit (Seqtl v) (Build_finiteT (lt_S_n n1 (S n0) l))) (Build_finiteT (lt_S_n??l0)))='((omit (Seqtl v) (Build_finiteT (lt_S_n n1 (S n0) l))) (Build_finiteT (lt_S_n??l1))).
-Unfold not;Auto with algebra.
-(Apply H;Auto with algebra).
-Intros.
-Change   ~(Seqtl v i1) =' (Seqtl v j0). 
-(Apply Seqtl_preserves_distinct;Auto with algebra).
+intros n3 l0 H2.
+simpl in H2.
+cut
+ (~
+  omit (Seqtl v) (Build_finiteT (lt_S_n n1 (S n0) l))
+    (Build_finiteT (lt_S_n _ _ l0)) ='
+  omit (Seqtl v) (Build_finiteT (lt_S_n n1 (S n0) l))
+    (Build_finiteT (lt_S_n _ _ l1)) in _).
+unfold not in |- *; auto with algebra.
+apply H; auto with algebra.
+intros.
+change (~ Seqtl v i1 =' Seqtl v j0 in _) in |- *. 
+apply Seqtl_preserves_distinct; auto with algebra.
 Qed.
 
-Hints Resolve omit_preserves_distinct : algebra.
+Hint Resolve omit_preserves_distinct: algebra.
 
-Lemma distinct_omit_removes_all : (A:Setoid;n:Nat;v:(seq (S n) A))
-  (distinct v) -> (i:(fin (S n));j:(fin n)) ~((omit v i) j)='(v i).
-Induction n;Intros.
-Inversion_clear j;Inversion_clear in_range_prf.
-Red in H0.
-Elim i.
-Intro x;Case x;Intros.
-Cut ~((Seqtl v) j) =' (v (Build_finiteT in_range_prf)).
-Case j.
-Intros.
-Cut ~(v (Build_finiteT (lt_n_S??in_range_prf0)))='(v (Build_finiteT in_range_prf)).
-Intros.
-Cut ~(Build_finiteT (lt_n_S index (S n0) in_range_prf0)) =' (Build_finiteT in_range_prf)in(fin?).
-Intro.
-Red in H2;Red.
-Auto with algebra.
-Simpl.
-Auto.
-Auto with algebra.
-Case j.
-Intros x0 l.
-Cut ~(v (Build_finiteT (lt_n_S??l)))='(v (Build_finiteT in_range_prf)).
-Unfold not;Auto with algebra.
-Cut ~(Build_finiteT (lt_n_S x0 (S n0) l)) =' (Build_finiteT in_range_prf)in(fin?).
-Intro.
-(Apply H0;Auto with algebra).
-Red.
-Simpl.
-Intro.
-Inversion H1.
-Red;Intro.
-Cut ((head v);;(omit (Seqtl v) (Build_finiteT (lt_S_n??in_range_prf))) j)='(v (Build_finiteT in_range_prf)).
-Case j.
-Intro x0.
-Case x0.
-Intro l.
-Intro.
-Cut (head v)='(v (Build_finiteT in_range_prf)).
-Intro.
-Unfold head in H3.
-Red in H0.
-(Apply H0 with (Build_finiteT (lt_O_Sn (S n0))) (Build_finiteT in_range_prf);Auto with algebra).
-Simpl.
-Auto.
-(Apply Trans with ((head v);;(omit (Seqtl v) (Build_finiteT (lt_S_n n1 (S n0) in_range_prf))) (Build_finiteT l));Auto with algebra).
-Intros n2 l H2.
-Cut ((omit (Seqtl v) (Build_finiteT (lt_S_n n1 (S n0) in_range_prf))) (Build_finiteT (lt_S_n??l)))='(v (Build_finiteT in_range_prf)).
-Intro.
-Cut ((omit (Seqtl v) (Build_finiteT (lt_S_n n1 (S n0) in_range_prf))) (Build_finiteT (lt_S_n??l)))='((Seqtl v) (Build_finiteT (lt_S_n??in_range_prf))).
-Intro.
-Red in H.
-Cut (distinct (Seqtl v)).
-Intro.
-(Apply H with (Seqtl v) (Build_finiteT (lt_S_n n1 (S n0) in_range_prf)) (Build_finiteT (lt_S_n n2 n0 l));Auto with algebra).
-(Apply Seqtl_preserves_distinct;Auto with algebra).
-(Apply Trans with (v (Build_finiteT in_range_prf));Auto with algebra).
-(Apply Trans with ((head v) ;;(omit (Seqtl v) (Build_finiteT (lt_S_n n1 (S n0) in_range_prf))) (Build_finiteT l));Auto with algebra).
-(Apply Trans with (omit v (Build_finiteT in_range_prf) j);Auto with algebra).
+Lemma distinct_omit_removes_all :
+ forall (A : Setoid) (n : Nat) (v : seq (S n) A),
+ distinct v -> forall (i : fin (S n)) (j : fin n), ~ omit v i j =' v i in _.
+simple induction n; intros.
+inversion_clear j; inversion_clear in_range_prf.
+red in H0.
+elim i.
+intro x; case x; intros.
+cut (~ Seqtl v j =' v (Build_finiteT in_range_prf) in _).
+case j.
+intros.
+cut
+ (~
+  v (Build_finiteT (lt_n_S _ _ in_range_prf0)) ='
+  v (Build_finiteT in_range_prf) in _).
+intros.
+cut
+ (~
+  Build_finiteT (lt_n_S index (S n0) in_range_prf0) ='
+  Build_finiteT in_range_prf in fin _).
+intro.
+red in H2; red in |- *.
+auto with algebra.
+simpl in |- *.
+auto.
+auto with algebra.
+case j.
+intros x0 l.
+cut
+ (~ v (Build_finiteT (lt_n_S _ _ l)) =' v (Build_finiteT in_range_prf) in _).
+unfold not in |- *; auto with algebra.
+cut
+ (~ Build_finiteT (lt_n_S x0 (S n0) l) =' Build_finiteT in_range_prf in fin _).
+intro.
+apply H0; auto with algebra.
+red in |- *.
+simpl in |- *.
+intro.
+inversion H1.
+red in |- *; intro.
+cut
+ ((head v;; omit (Seqtl v) (Build_finiteT (lt_S_n _ _ in_range_prf))) j ='
+  v (Build_finiteT in_range_prf) in _).
+case j.
+intro x0.
+case x0.
+intro l.
+intro.
+cut (head v =' v (Build_finiteT in_range_prf) in _).
+intro.
+unfold head in H3.
+red in H0.
+apply H0 with (Build_finiteT (lt_O_Sn (S n0))) (Build_finiteT in_range_prf);
+ auto with algebra.
+simpl in |- *.
+auto.
+apply
+ Trans
+  with
+    ((head v;; omit (Seqtl v) (Build_finiteT (lt_S_n n1 (S n0) in_range_prf)))
+       (Build_finiteT l)); auto with algebra.
+intros n2 l H2.
+cut
+ (omit (Seqtl v) (Build_finiteT (lt_S_n n1 (S n0) in_range_prf))
+    (Build_finiteT (lt_S_n _ _ l)) =' v (Build_finiteT in_range_prf) in _).
+intro.
+cut
+ (omit (Seqtl v) (Build_finiteT (lt_S_n n1 (S n0) in_range_prf))
+    (Build_finiteT (lt_S_n _ _ l)) ='
+  Seqtl v (Build_finiteT (lt_S_n _ _ in_range_prf)) in _).
+intro.
+red in H.
+cut (distinct (Seqtl v)).
+intro.
+apply
+ H
+  with
+    (Seqtl v)
+    (Build_finiteT (lt_S_n n1 (S n0) in_range_prf))
+    (Build_finiteT (lt_S_n n2 n0 l)); auto with algebra.
+apply Seqtl_preserves_distinct; auto with algebra.
+apply Trans with (v (Build_finiteT in_range_prf)); auto with algebra.
+apply
+ Trans
+  with
+    ((head v;; omit (Seqtl v) (Build_finiteT (lt_S_n n1 (S n0) in_range_prf)))
+       (Build_finiteT l)); auto with algebra.
+apply Trans with (omit v (Build_finiteT in_range_prf) j); auto with algebra.
 Qed.
 
-Lemma Map_embed_preserves_distinct : (A:Setoid;n:Nat;B:(part_set A);v:(seq n B))
-  (distinct v)->(distinct (Map_embed v)).
-Unfold distinct.
-Unfold not.
-Intros.
-(Apply H with i j;Auto with algebra).
+Lemma Map_embed_preserves_distinct :
+ forall (A : Setoid) (n : Nat) (B : part_set A) (v : seq n B),
+ distinct v -> distinct (Map_embed v).
+unfold distinct in |- *.
+unfold not in |- *.
+intros.
+apply H with i j; auto with algebra.
 Qed.
 
-Hints Resolve Map_embed_preserves_distinct : algebra.
+Hint Resolve Map_embed_preserves_distinct: algebra.
 
-Lemma Map_embed_reflects_distinct : (A:Setoid;n:Nat;B:(part_set A);v:(seq n B))
-  (distinct (Map_embed v))->(distinct v).
-Unfold distinct.
-Unfold not.
-Intros.
-(Apply H with i j;Auto with algebra).
+Lemma Map_embed_reflects_distinct :
+ forall (A : Setoid) (n : Nat) (B : part_set A) (v : seq n B),
+ distinct (Map_embed v) -> distinct v.
+unfold distinct in |- *.
+unfold not in |- *.
+intros.
+apply H with i j; auto with algebra.
 Qed.
 
-Lemma seq_set_seq_preserves_distinct : (A:Setoid;n:Nat;v:(seq n A))
-  (distinct v)->(distinct (seq_set_seq v)).
-Unfold distinct.
-Intros.
-Simpl.
-Red;Intro.
-Red in H;(Apply (H??H0);Auto with algebra).
+Lemma seq_set_seq_preserves_distinct :
+ forall (A : Setoid) (n : Nat) (v : seq n A),
+ distinct v -> distinct (seq_set_seq v).
+unfold distinct in |- *.
+intros.
+simpl in |- *.
+red in |- *; intro.
+red in H; (apply (H _ _ H0); auto with algebra).
 Qed.
 
-Hints Resolve seq_set_seq_preserves_distinct : algebra.
+Hint Resolve seq_set_seq_preserves_distinct: algebra.
 
-Lemma seq_set_seq_respects_distinct : (A:Setoid;n:Nat;v:(seq n A))
-  (distinct (seq_set_seq v))->(distinct v).
-Unfold distinct.
-Intros.
-Simpl.
-Red;Intro.
-Red in H;(Apply (H??H0);Auto with algebra).
+Lemma seq_set_seq_respects_distinct :
+ forall (A : Setoid) (n : Nat) (v : seq n A),
+ distinct (seq_set_seq v) -> distinct v.
+unfold distinct in |- *.
+intros.
+simpl in |- *.
+red in |- *; intro.
+red in H; (apply (H _ _ H0); auto with algebra).
 Qed.
 
-Lemma cast_seq_preserves_distinct : (A:Setoid;n,m:Nat;v:(seq n A);H:n='m)
-  (distinct v)->(distinct (cast_seq v H)).
-Unfold cast_seq distinct.
-Intros until H.
-Elim v.
-Simpl.
-Intros.
-Red;Intro;Red in H0;(Apply H0 with (cast_fin i (sym_eq nat n m H)) (cast_fin j (sym_eq nat n m H));Auto with algebra).
-Unfold cast_fin.
-Generalize H1;Elim i;Elim j.
-Simpl.
-Auto.
+Lemma cast_seq_preserves_distinct :
+ forall (A : Setoid) (n m : Nat) (v : seq n A) (H : n =' m in _),
+ distinct v -> distinct (cast_seq v H).
+unfold cast_seq, distinct in |- *.
+intros until H.
+elim v.
+simpl in |- *.
+intros.
+red in |- *; intro; red in H0;
+ (apply H0 with (cast_fin i (sym_eq H)) (cast_fin j (sym_eq H));
+   auto with algebra).
+unfold cast_fin in |- *.
+generalize H1; elim i; elim j.
+simpl in |- *.
+auto.
 Qed.
 
-Hints Resolve cast_seq_preserves_distinct : algebra.
+Hint Resolve cast_seq_preserves_distinct: algebra.
 
-Lemma cast_seq_respects_distinct : (A:Setoid;n,m:Nat;v:(seq n A);H:n='m)
-  (distinct (cast_seq v H))->(distinct v).
-Unfold distinct cast_seq.
-Intros until H.
-NewDestruct v.
-Simpl.
-Intros.
-Red;Intro;Red in H0.
-Apply H0 with (cast_fin i H) (cast_fin j H).
-Unfold cast_fin.
-Generalize H1;Elim i;Elim j.
-Simpl.
-Auto.
-(Apply Trans with (Ap i);Auto with algebra).
-(Apply Map_compatible_prf;Auto with algebra).
-Unfold cast_fin.
-Elim i.
-Simpl.
-Auto.
-(Apply Trans with (Ap j);Auto with algebra).
-(Apply Map_compatible_prf;Auto with algebra).
-Unfold cast_fin.
-Elim j.
-Simpl.
-Auto.
+Lemma cast_seq_respects_distinct :
+ forall (A : Setoid) (n m : Nat) (v : seq n A) (H : n =' m in _),
+ distinct (cast_seq v H) -> distinct v.
+unfold distinct, cast_seq in |- *.
+intros until H.
+destruct v.
+simpl in |- *.
+intros.
+red in |- *; intro; red in H0.
+apply H0 with (cast_fin i H) (cast_fin j H).
+unfold cast_fin in |- *.
+generalize H1; elim i; elim j.
+simpl in |- *.
+auto.
+apply Trans with (Ap i); auto with algebra.
+apply Map_compatible_prf; auto with algebra.
+unfold cast_fin in |- *.
+elim i.
+simpl in |- *.
+auto.
+apply Trans with (Ap j); auto with algebra.
+apply Map_compatible_prf; auto with algebra.
+unfold cast_fin in |- *.
+elim j.
+simpl in |- *.
+auto.
 Qed.

@@ -1,5 +1,6 @@
 (** %\subsection*{ support :  conshdtl.v }%*)
 Set Implicit Arguments.
+Unset Strict Implicit.
 Require Export finite.
 Require Export Parts.
 
@@ -17,283 +18,303 @@ Section MAIN.
 
 (** %\label{conseq}% *)
 
-Definition conseq : (A:Setoid; n:Nat; a:A; v:(seq n A))(seq (S n) A).
-Intros.
-Apply (Build_Map 3!([m:(fin (S n))]
-      <[_:(fin (S n))](A::Type)>
-        Cases m of
-          (Build_finiteT x0 x1) => 
-           (<[x2:Nat](lt x2 (S n))->(A::Type)>
-              Cases x0 of
-                O => [_:(lt O (S n))]a
-              | (S m') => 
-                 [HSm':(lt (S m') (S n))]
-                  (Ap v (Build_finiteT (lt_S_n m' n HSm')))
-              end x1)
-        end)).
-Red.
-Simpl.
-Intros x0 y.
-Case x0.
-Case y.
-Simpl.
-Intros x2 y1.
-NewInduction x2.
-Intros x2 y2.
-NewInduction x2.
-Intro;Apply Refl.
-Intro H.
-Inversion H.
-Clear IHx2.
-Induction index.
-Intros h H.
-Inversion H.
-Intros. 
-Clear H.
-(Apply Ap_comp;Auto with algebra).
+Definition conseq :
+  forall (A : Setoid) (n : Nat) (a : A) (v : seq n A), seq (S n) A.
+intros.
+apply
+ (Build_Map
+    (Ap:=fun m : fin (S n) =>
+         match m return (A:Type) with
+         | Build_finiteT x0 x1 =>
+             match x0 as x2 return (x2 < S n -> (A:Type)) with
+             | O => fun _ : 0 < S n => a
+             | S m' =>
+                 fun HSm' : S m' < S n =>
+                 Ap v (Build_finiteT (lt_S_n m' n HSm'))
+             end x1
+         end)).
+red in |- *.
+simpl in |- *.
+intros x0 y.
+case x0.
+case y.
+simpl in |- *.
+intros x2 y1.
+induction x2.
+intros x2 y2.
+induction x2.
+intro; apply Refl.
+intro H.
+inversion H.
+clear IHx2.
+simple induction index.
+intros h H.
+inversion H.
+intros. 
+clear H.
+apply Ap_comp; auto with algebra.
 Defined.
 
-Notation "a ;; b" := (conseq a b) (at level 4, right associativity)
-  V8only (at level 60, right associativity).
+Notation "a ;; b" := (conseq a b) (at level 60, right associativity).
 
-Variable A:Setoid;n:Nat;a:A.
+Variables (A : Setoid) (n : Nat) (a : A).
 
-Lemma cons_comp :  (a':A; v,v':(seq n A)) 
-  a =' a' -> v =' v'  -> a ;; v =' a' ;; v'.
-Intros.
-Simpl.
-Red.
-Intro i'.
-Elim i'.
-Intro i.
-Simpl.
-Case i.
-Auto.
-Intros.
-(Apply Ap_comp;Auto with algebra).
+Lemma cons_comp :
+ forall (a' : A) (v v' : seq n A),
+ a =' a' in _ -> v =' v' in _ -> a;; v =' a';; v' in _.
+intros.
+simpl in |- *.
+red in |- *.
+intro i'.
+elim i'.
+intro i.
+simpl in |- *.
+case i.
+auto.
+intros.
+apply Ap_comp; auto with algebra.
 Qed.
 
-Hints Resolve cons_comp : algebra.
+Hint Resolve cons_comp: algebra.
 
-Lemma cons_first_element : (v:(seq n A);H:(lt O (S n))) 
-  (a;;v (Build_finiteT H))=' a.
-Auto with algebra.
+Lemma cons_first_element :
+ forall (v : seq n A) (H : 0 < S n), (a;; v) (Build_finiteT H) =' a in _.
+auto with algebra.
 Qed.
 
 (** %\label{head}% *)
-Definition head [A:Setoid;n:Nat;v:(seq (S n) A)] := (v (Build_finiteT (lt_O_Sn n))).
+Definition head (A : Setoid) (n : Nat) (v : seq (S n) A) :=
+  v (Build_finiteT (lt_O_Sn n)).
 
-Lemma head_comp : (A:Setoid;n:Nat;v,v':(seq (S n) A)) 
-  v =' v' -> (head v)='(head v').
-Unfold head.
-Auto with algebra.
+Lemma head_comp :
+ forall (A : Setoid) (n : Nat) (v v' : seq (S n) A),
+ v =' v' in _ -> head v =' head v' in _.
+unfold head in |- *.
+auto with algebra.
 Qed.
 
-Hints Resolve head_comp cons_first_element : algebra.
+Hint Resolve head_comp cons_first_element: algebra.
 
 (** - these two lemmas are mainly useful for the algebra Hints database 
  (hence the names) *)
-Lemma head_unfolding1 : (v:(seq (S n) A)) 
-  (v (Build_finiteT (lt_O_Sn n)))='a -> (head v)='a.
-Auto with algebra.
+Lemma head_unfolding1 :
+ forall v : seq (S n) A,
+ v (Build_finiteT (lt_O_Sn n)) =' a in _ -> head v =' a in _.
+auto with algebra.
 Qed.
 
-Lemma head_unfolding2 : (v:(seq (S n) A)) 
-  a='(v (Build_finiteT (lt_O_Sn n))) -> a=' (head v).
-Auto with algebra.
+Lemma head_unfolding2 :
+ forall v : seq (S n) A,
+ a =' v (Build_finiteT (lt_O_Sn n)) in _ -> a =' head v in _.
+auto with algebra.
 Qed.
 
-Hints Resolve head_unfolding1 head_unfolding2 : algebra.
-Hint head_unfolding1 : algebra := Extern 0 (head ?)='? Unfold head.
-Hint head_unfolding2 : algebra := Extern 0 ?='(head ?) Unfold head.
+Hint Resolve head_unfolding1 head_unfolding2: algebra.
+Hint Extern 0 (head _ =' _ in _) => unfold head in |- *: algebra.
+Hint Extern 0 (_ =' head _ in _) => unfold head in |- *: algebra.
 
-Lemma head_cons_inv : (v:(seq n A)) (head a;;v)='a.
-Auto with algebra.
+Lemma head_cons_inv : forall v : seq n A, head (a;; v) =' a in _.
+auto with algebra.
 Qed.
 
-Hints Resolve head_cons_inv : algebra.
+Hint Resolve head_cons_inv: algebra.
 
-Lemma seq_S_O_contains_single_elt : (A:Setoid;v:(seq (S O) A);i:(fin (S O))) 
-  (v i)='(head v).
-Intros.
-Unfold head.
-(Apply Ap_comp;Auto with algebra).
+Lemma seq_S_O_contains_single_elt :
+ forall (A : Setoid) (v : seq 1 A) (i : fin 1), v i =' head v in _.
+intros.
+unfold head in |- *.
+apply Ap_comp; auto with algebra.
 Qed.
 
-Hints Resolve seq_S_O_contains_single_elt : algebra.
+Hint Resolve seq_S_O_contains_single_elt: algebra.
 
-Lemma seq_S_O_head_fixes_everything : (A:Setoid;v,v':(seq (S O) A)) 
-  (head v)='(head v')->v='v'.
-Intros.
-Simpl.
-Red.
-Intro.
-Apply Trans with (head v).
-(Apply seq_S_O_contains_single_elt;Auto with algebra).
-(Apply Trans with (head v');Auto with algebra).
+Lemma seq_S_O_head_fixes_everything :
+ forall (A : Setoid) (v v' : seq 1 A), head v =' head v' in _ -> v =' v' in _.
+intros.
+simpl in |- *.
+red in |- *.
+intro.
+apply Trans with (head v).
+apply seq_S_O_contains_single_elt; auto with algebra.
+apply Trans with (head v'); auto with algebra.
 Qed.
 
-Hints Resolve seq_S_O_head_fixes_everything : algebra.
+Hint Resolve seq_S_O_head_fixes_everything: algebra.
 
-Lemma cons_later_elements : (v:(seq n A); i:Nat; Hi:(lt (S i) (S n)); Hi':(lt i n))
-  (a;;v (Build_finiteT Hi)) =' (v (Build_finiteT Hi')).
-Intros.
-Simpl.
-(Apply Ap_comp;Auto with algebra).
+Lemma cons_later_elements :
+ forall (v : seq n A) (i : Nat) (Hi : S i < S n) (Hi' : i < n),
+ (a;; v) (Build_finiteT Hi) =' v (Build_finiteT Hi') in _.
+intros.
+simpl in |- *.
+apply Ap_comp; auto with algebra.
 Qed.
 
-Hints Resolve cons_later_elements : algebra.
+Hint Resolve cons_later_elements: algebra.
 
 (* Taking the "tl" of a sequence *)
 (** %\label{Seqtl}% *)
-Definition Seqtl : (n:Nat)(seq n A)->(seq (pred n) A). 
-Clear n.
-Intro n.
-Case n.
-Intro f.
-Exact f.
-Intros m f.
-Apply (Build_Map 3!([i':(fin m)](Cases i' of (Build_finiteT i Hi) => (f (Build_finiteT (lt_n_S ?? (Hi::(lt i m)))))end))).
-Red.
-Intros x y.
-Case x.
-Case y.
-Simpl.
-Intros.
-(Apply Ap_comp;Auto with algebra).
+Definition Seqtl : forall n : Nat, seq n A -> seq (pred n) A. 
+clear n.
+intro n.
+case n.
+intro f.
+exact f.
+intros m f.
+apply
+ (Build_Map
+    (Ap:=fun i' : fin m =>
+         match i' with
+         | Build_finiteT i Hi => f (Build_finiteT (lt_n_S _ _ (Hi:i < m)))
+         end)).
+red in |- *.
+intros x y.
+case x.
+case y.
+simpl in |- *.
+intros.
+apply Ap_comp; auto with algebra.
 Defined.
 
-Lemma Seqtl_comp: (v,v':(seq n A)) 
-  v='v'->(Seqtl v)='(Seqtl v').
-NewInduction n.
-Intros.
-Simpl.
-Auto.
-Intros.
-Simpl.
-Red.
-Simpl.
-Intro.
-Elim x.
-Intros.
-(Apply Ap_comp;Auto with algebra).
+Lemma Seqtl_comp :
+ forall v v' : seq n A, v =' v' in _ -> Seqtl v =' Seqtl v' in _.
+induction n.
+intros.
+simpl in |- *.
+auto.
+intros.
+simpl in |- *.
+red in |- *.
+simpl in |- *.
+intro.
+elim x.
+intros.
+apply Ap_comp; auto with algebra.
 Qed.
 
-Hints Resolve Seqtl_comp : algebra.
+Hint Resolve Seqtl_comp: algebra.
 
 (** - "hdtl" is a 'tool' for writing a sequence as the cons of its head and its tail
  %\label{hdtl}% *)
 
-Definition hdtl [v:(seq (S n) A)]:=((head v);; (Seqtl v)::(seq (S n) A)).
+Definition hdtl (v : seq (S n) A) := head v;; Seqtl v:seq (S n) A.
 
-Lemma conseq_hdtl : (v:(seq (S n) A);H:(lt O (S n)))
-  v =' (v (Build_finiteT H));;(Seqtl v).
+Lemma conseq_hdtl :
+ forall (v : seq (S n) A) (H : 0 < S n),
+ v =' v (Build_finiteT H);; Seqtl v in _.
 (* note we don't say v='(head v);;(Seqtl v): we want freedom in the choice of the proof H *)
-Intros.
-Simpl.
-Red.
-Simpl.
-Intro x.
-Case x.
-Intro.
-Case index.
-Intros;Apply Ap_comp;Simpl;Auto with algebra arith.
-Red;Auto with algebra.
-Intros;Apply Ap_comp;Simpl;Auto with algebra arith.
-Red;Auto with algebra.
+intros.
+simpl in |- *.
+red in |- *.
+simpl in |- *.
+intro x.
+case x.
+intro.
+case index.
+intros; apply Ap_comp; simpl in |- *; auto with algebra arith.
+red in |- *; auto with algebra.
+intros; apply Ap_comp; simpl in |- *; auto with algebra arith.
+red in |- *; auto with algebra.
 Qed.
 
-Hints Resolve conseq_hdtl : algebra.
+Hint Resolve conseq_hdtl: algebra.
 
-Lemma hdtl_x_is_x : (v:(seq (S n) A)) v =' (hdtl v).
-Unfold hdtl.
-Intros.
-Unfold head.
-Apply conseq_hdtl.
+Lemma hdtl_x_is_x : forall v : seq (S n) A, v =' hdtl v in _.
+unfold hdtl in |- *.
+intros.
+unfold head in |- *.
+apply conseq_hdtl.
 Qed.
 
-Hints Resolve hdtl_x_is_x : algebra.
-Hint headconsseqtl1 : algebra := Extern 0 (head ?);;(Seqtl ?)='? Fold hdtl;Apply Sym;Apply hdtl_x_is_x.
-Hint headconsseqtl2 : algebra := Extern 0 ?='(head ?);;(Seqtl ?) Fold hdtl;Apply hdtl_x_is_x.
+Hint Resolve hdtl_x_is_x: algebra.
+Hint Extern 0 (head _;; Seqtl _ =' _ in _) =>
+  fold hdtl in |- *; apply Sym; apply hdtl_x_is_x: algebra.
+Hint Extern 0 (_ =' head _;; Seqtl _ in _) =>
+  fold hdtl in |- *; apply hdtl_x_is_x: algebra.
 
-Lemma cons_lemma_nice: (P:(Predicate (seq (S n) A))) 
-  ((a:A;v:(seq n A))(Pred_fun P a;;v))
-    -> ((w:(seq (S n) A))(Pred_fun P w)).
-Intro.
-Elim P.
-Intros.
-Unfold pred_compatible in Pred_compatible_prf.
-(Apply Pred_compatible_prf with (hdtl w);Auto with algebra).
-Unfold hdtl.
-Apply H.
+Lemma cons_lemma_nice :
+ forall P : Predicate (seq (S n) A),
+ (forall (a : A) (v : seq n A), Pred_fun P (a;; v)) ->
+ forall w : seq (S n) A, Pred_fun P w.
+intro.
+elim P.
+intros.
+unfold pred_compatible in Pred_compatible_prf.
+apply Pred_compatible_prf with (hdtl w); auto with algebra.
+unfold hdtl in |- *.
+apply H.
 Qed.
 
-Lemma cons_lemma_verynice: 
-  (P:(Predicate (seq (S n) A));H:(lt O (S n));w:(seq (S n) A)) 
-    (Pred_fun P (w (Build_finiteT H));;(Seqtl w))
-      -> (Pred_fun P w).
-Intros P H w. 
-Elim P.
-Intros.
-Unfold pred_compatible in Pred_compatible_prf.
-(Apply Pred_compatible_prf with (w (Build_finiteT H));;(Seqtl w);Auto with algebra).
+Lemma cons_lemma_verynice :
+ forall (P : Predicate (seq (S n) A)) (H : 0 < S n) (w : seq (S n) A),
+ Pred_fun P (w (Build_finiteT H);; Seqtl w) -> Pred_fun P w.
+intros P H w. 
+elim P.
+intros.
+unfold pred_compatible in Pred_compatible_prf.
+apply Pred_compatible_prf with (w (Build_finiteT H);; Seqtl w);
+ auto with algebra.
 Qed.
 
-Lemma Seqtl_cons_inv : (v:(seq n A)) (Seqtl a;;v)='v.
-Intros.
-Simpl.
-Red.
-Simpl.
-Intro i.
-Elim i.
-Intros.
-(Apply Ap_comp;Auto with algebra).
+Lemma Seqtl_cons_inv : forall v : seq n A, Seqtl (a;; v) =' v in _.
+intros.
+simpl in |- *.
+red in |- *.
+simpl in |- *.
+intro i.
+elim i.
+intros.
+apply Ap_comp; auto with algebra.
 Qed.
 
-Hints Resolve Seqtl_cons_inv : algebra.
+Hint Resolve Seqtl_cons_inv: algebra.
 
-Lemma Seqtl_to_seq : (v:(seq (S n) A); i:Nat; Hi:(lt i n);HSi:(lt (S i) (S n)))
-  ((Seqtl v) (Build_finiteT Hi))=' (v (Build_finiteT HSi)).
-Intros.
-Simpl.
-(Apply Ap_comp;Auto with algebra).
+Lemma Seqtl_to_seq :
+ forall (v : seq (S n) A) (i : Nat) (Hi : i < n) (HSi : S i < S n),
+ Seqtl v (Build_finiteT Hi) =' v (Build_finiteT HSi) in _.
+intros.
+simpl in |- *.
+apply Ap_comp; auto with algebra.
 Qed.
 
-Hints Resolve Seqtl_to_seq : algebra.
+Hint Resolve Seqtl_to_seq: algebra.
 
-Lemma split_hd_tl_equality : (v,w:(seq (S n) A))
-  (head v)='(head w) -> (Seqtl v)='(Seqtl w) -> v='w.
-Intros.
-Intro.
-NewDestruct x.
-NewDestruct index.
-(Apply Trans with (head v);Auto with algebra).
-(Apply Trans with (head w);Auto with algebra).
-(Apply Trans with (Seqtl v (Build_finiteT (lt_S_n ?? in_range_prf)));Auto with algebra).
-(Apply Trans with (Seqtl w (Build_finiteT (lt_S_n ?? in_range_prf)));Auto with algebra).
+Lemma split_hd_tl_equality :
+ forall v w : seq (S n) A,
+ head v =' head w in _ -> Seqtl v =' Seqtl w in _ -> v =' w in _.
+intros.
+intro.
+destruct x.
+destruct index as [| n0].
+apply Trans with (head v); auto with algebra.
+apply Trans with (head w); auto with algebra.
+apply Trans with (Seqtl v (Build_finiteT (lt_S_n _ _ in_range_prf)));
+ auto with algebra.
+apply Trans with (Seqtl w (Build_finiteT (lt_S_n _ _ in_range_prf)));
+ auto with algebra.
 Qed.
 
-Hints Resolve split_hd_tl_equality : algebra.
+Hint Resolve split_hd_tl_equality: algebra.
 End MAIN.
 
 (* Hints and notation inside sections is forgotten... *)
-Notation "a ;; b" := (conseq a b) (at level 4, right associativity)
-  V8only (at level 60, right associativity).
+Notation "a ;; b" := (conseq a b) (at level 60, right associativity).
 
-Hints Resolve cons_comp : algebra.
-Hints Resolve head_comp cons_first_element : algebra.
-Hints Resolve head_unfolding1 head_unfolding2 : algebra.
-Hint head_unfolding1 : algebra := Extern 0 (head ?)='? Unfold head.
-Hint head_unfolding2 : algebra := Extern 0 ?='(head ?) Unfold head.
-Hints Resolve head_cons_inv : algebra.
-Hints Resolve cons_later_elements : algebra.
-Hints Resolve Seqtl_comp : algebra.
-Hints Resolve conseq_hdtl : algebra.
-Hints Resolve hdtl_x_is_x : algebra.
-Hint headconsseqtl1 : algebra := Extern 0 (head ?);;(Seqtl ?)='? Fold hdtl;Apply Sym;Apply hdtl_x_is_x.
-Hint headconsseqtl2 : algebra := Extern 0 ?='(head ?);;(Seqtl ?) Fold hdtl;Apply hdtl_x_is_x.
-Hints Resolve Seqtl_cons_inv : algebra.
-Hints Resolve Seqtl_to_seq : algebra.
-Hints Resolve split_hd_tl_equality : algebra.
-Hints Resolve seq_S_O_contains_single_elt : algebra.
-Hints Resolve seq_S_O_head_fixes_everything : algebra.
+Hint Resolve cons_comp: algebra.
+Hint Resolve head_comp cons_first_element: algebra.
+Hint Resolve head_unfolding1 head_unfolding2: algebra.
+Hint Extern 0 (head _ =' _ in _) => unfold head in |- *: algebra.
+Hint Extern 0 (_ =' head _ in _) => unfold head in |- *: algebra.
+Hint Resolve head_cons_inv: algebra.
+Hint Resolve cons_later_elements: algebra.
+Hint Resolve Seqtl_comp: algebra.
+Hint Resolve conseq_hdtl: algebra.
+Hint Resolve hdtl_x_is_x: algebra.
+Hint Extern 0 (head _;; Seqtl _ =' _ in _) =>
+  fold hdtl in |- *; apply Sym; apply hdtl_x_is_x: algebra.
+Hint Extern 0 (_ =' head _;; Seqtl _ in _) =>
+  fold hdtl in |- *; apply hdtl_x_is_x: algebra.
+Hint Resolve Seqtl_cons_inv: algebra.
+Hint Resolve Seqtl_to_seq: algebra.
+Hint Resolve split_hd_tl_equality: algebra.
+Hint Resolve seq_S_O_contains_single_elt: algebra.
+Hint Resolve seq_S_O_head_fixes_everything: algebra.

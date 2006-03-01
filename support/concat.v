@@ -2,136 +2,146 @@
 (** - concatenation of sequences, denoted by "++" (Haskell notation) plus some
  preliminary lemmas *)
 Set Implicit Arguments.
+Unset Strict Implicit.
 Require Export conshdtl.
 
 Section MAIN.
-Variable A:Setoid.
+Variable A : Setoid.
 
 (** %\label{concat}% *)
-Definition concat : (n,m:Nat; f:(seq n A); g:(seq m A))(seq (plus n m) A).
-Induction n.
-Simpl.
-Intros.
-Exact g.
-Intros.
-Simpl.
-Exact (f (Build_finiteT (lt_O_Sn n0)));; (X ? (Seqtl f) g).
+Definition concat :
+  forall (n m : Nat) (f : seq n A) (g : seq m A), seq (n + m) A.
+simple induction n.
+simpl in |- *.
+intros.
+exact g.
+intros.
+simpl in |- *.
+exact (f (Build_finiteT (lt_O_Sn n0));; X _ (Seqtl f) g).
 (* ie. (concat (f0 :: (Seqtl f) g)) = f0 :: (concat (Seqtl f) g) *)
 Defined.
 
-Notation "a ++ b" := (concat a b) (at level 1, no associativity)
-  V8only (at level 45, right associativity).
+Notation "a ++ b" := (concat a b) (at level 45, right associativity).
 
-Lemma concat_comp : (n,m:Nat; f,f':(seq n A); g,g':(seq m A))
-  f='f' -> g='g' -> f++g='f'++g'.
-Induction n.
-Intros.
-Simpl.
-Assumption.
+Lemma concat_comp :
+ forall (n m : Nat) (f f' : seq n A) (g g' : seq m A),
+ f =' f' in _ -> g =' g' in _ -> f ++ g =' f' ++ g' in _.
+simple induction n.
+intros.
+simpl in |- *.
+assumption.
 (* the induction step *)
-Intros.
-LetTac fg:=f++g in Goal.
-LetTac fg':=(f'++g') in Goal.
-Simpl.
-Red.
-NewDestruct x.
-NewDestruct index.
-Unfold fg.
-Unfold fg'.
-Simpl.
-Auto with algebra.
+intros.
+set (fg := f ++ g) in |- *.
+set (fg' := f' ++ g') in |- *.
+simpl in |- *.
+red in |- *.
+destruct x.
+destruct index as [| n1].
+unfold fg in |- *.
+unfold fg' in |- *.
+simpl in |- *.
+auto with algebra.
 (**)
-(Apply Trans with ((Seqtl f)++g (Build_finiteT (lt_S_n ?? in_range_prf)));Auto with algebra).
-(Apply Trans with ((Seqtl f')++g' (Build_finiteT (lt_S_n ?? in_range_prf)));Auto with algebra).
-(Apply Ap_comp;Auto with algebra).
-(Apply (H ? (Seqtl f) (Seqtl f') g g');Auto with algebra).
-Change (Seqtl f)=' (Seqtl f').
-(Apply Seqtl_comp;Auto with algebra).
+apply Trans with ((Seqtl f ++ g) (Build_finiteT (lt_S_n _ _ in_range_prf)));
+ auto with algebra.
+apply Trans with ((Seqtl f' ++ g') (Build_finiteT (lt_S_n _ _ in_range_prf)));
+ auto with algebra.
+apply Ap_comp; auto with algebra.
+apply (H _ (Seqtl f) (Seqtl f') g g'); auto with algebra.
+change (Seqtl f =' Seqtl f' in _) in |- *.
+apply Seqtl_comp; auto with algebra.
 Qed.
 
-Hints Resolve concat_comp : algebra.
+Hint Resolve concat_comp: algebra.
 
-Variable n,m:Nat.
+Variable n m : Nat.
 
-Lemma cons_concat : (a,a':A; v,v':(seq n A); w,w':(seq m A)) 
-  a='a' -> v='v' -> w='w'
-    -> a;;(v++w) =' (a';;v')++w'.
-Intros.
-Apply Trans with (a;;v)++w.
-Intro i.
-NewDestruct i.
-NewDestruct index.
-Simpl.
-Auto with algebra.
-Rename in_range_prf into p.
-(Apply Trans with (v++w (Build_finiteT (lt_S_n ?? p)));Auto with algebra).
-(Apply Trans with ((Seqtl a;;v)++w (Build_finiteT (lt_S_n ?? p)));Auto with algebra).
-Change (a;;v)++w='(a';;v')++w' in (seq (plus (S n) m) A).
-Apply concat_comp;Auto with algebra.
+Lemma cons_concat :
+ forall (a a' : A) (v v' : seq n A) (w w' : seq m A),
+ a =' a' in _ ->
+ v =' v' in _ -> w =' w' in _ -> a;; v ++ w =' (a';; v') ++ w' in _.
+intros.
+apply Trans with ((a;; v) ++ w).
+intro i.
+destruct i.
+destruct index as [| n0].
+simpl in |- *.
+auto with algebra.
+rename in_range_prf into p.
+apply Trans with ((v ++ w) (Build_finiteT (lt_S_n _ _ p))); auto with algebra.
+apply Trans with ((Seqtl (a;; v) ++ w) (Build_finiteT (lt_S_n _ _ p)));
+ auto with algebra.
+change ((a;; v) ++ w =' (a';; v') ++ w' in seq (S n + m) A) in |- *.
+apply concat_comp; auto with algebra.
 Qed.
 
-Hints Resolve cons_concat : algebra.
+Hint Resolve cons_concat: algebra.
 
-Lemma concat_cons : (a,a':A; v,v':(seq n A); w,w':(seq m A)) 
-  a='a' -> v='v' -> w='w'
-    -> (a';;v')++w'='a;;(v++w).
-Intros;Apply Sym;Apply cons_concat;Auto with algebra.
+Lemma concat_cons :
+ forall (a a' : A) (v v' : seq n A) (w w' : seq m A),
+ a =' a' in _ ->
+ v =' v' in _ -> w =' w' in _ -> (a';; v') ++ w' =' a;; v ++ w in _.
+intros; apply Sym; apply cons_concat; auto with algebra.
 Qed.
 
-Hints Resolve concat_cons : algebra.
+Hint Resolve concat_cons: algebra.
 
-Lemma cons_concat_special : (a:A; v:(seq n A); v':(seq m A))
-  a;;(v++v') =' (a;;v)++v'. 
-Intros.
-Intro i.
-NewDestruct i.
-NewDestruct index.
-Simpl.
-Auto with algebra.
-Rename in_range_prf into p.
-(Apply Trans with (v++v' (Build_finiteT (lt_S_n ?? p)));Auto with algebra).
-(Apply Trans with ((Seqtl a;;v)++v' (Build_finiteT (lt_S_n ?? p)));Auto with algebra).
+Lemma cons_concat_special :
+ forall (a : A) (v : seq n A) (v' : seq m A),
+ a;; v ++ v' =' (a;; v) ++ v' in _. 
+intros.
+intro i.
+destruct i.
+destruct index as [| n0].
+simpl in |- *.
+auto with algebra.
+rename in_range_prf into p.
+apply Trans with ((v ++ v') (Build_finiteT (lt_S_n _ _ p)));
+ auto with algebra.
+apply Trans with ((Seqtl (a;; v) ++ v') (Build_finiteT (lt_S_n _ _ p)));
+ auto with algebra.
 Qed.
 
 
-Lemma concat_first_element: 
-  (v:(seq (S n) A); w:(seq m A); Hnm:(lt O (S (plus n m)));Hn:(lt O (S n))) 
-    (v++w (Build_finiteT Hnm))='(v (Build_finiteT Hn)).
-Intros.
-(Apply Trans with (head v);Auto with algebra).
+Lemma concat_first_element :
+ forall (v : seq (S n) A) (w : seq m A) (Hnm : 0 < S (n + m)) (Hn : 0 < S n),
+ (v ++ w) (Build_finiteT Hnm) =' v (Build_finiteT Hn) in _.
+intros.
+apply Trans with (head v); auto with algebra.
 Qed.
 
-Lemma head_eats_concat : (v:(seq (S n) A); w:(seq m A)) 
-  (head v++w)='(head v).
-Intros.
-Unfold head;Auto with algebra.
+Lemma head_eats_concat :
+ forall (v : seq (S n) A) (w : seq m A), head (v ++ w) =' head v in _.
+intros.
+unfold head in |- *; auto with algebra.
 Qed.
 
-Lemma Seqtl_concat : (v:(seq (S n) A); w:(seq m A))
-  (Seqtl (v++w))=' (Seqtl v)++w.
-Intros.
-(Apply Trans with (Seqtl (hdtl v)++w);Auto with algebra).
-(Apply Trans with (Seqtl (head v);;((Seqtl v)++w));Auto with algebra).
-Unfold hdtl.
-(Apply Seqtl_comp;Auto with algebra).
-Change (Seqtl (head v);;((Seqtl v)++w))='(Seqtl v)++w in (seq (plus n m) A).
-Generalize Dependent (Seqtl_cons_inv (head v) (Seqtl v)++w).
-Auto.
+Lemma Seqtl_concat :
+ forall (v : seq (S n) A) (w : seq m A), Seqtl (v ++ w) =' Seqtl v ++ w in _.
+intros.
+apply Trans with (Seqtl (hdtl v ++ w)); auto with algebra.
+apply Trans with (Seqtl (head v;; Seqtl v ++ w)); auto with algebra.
+unfold hdtl in |- *.
+apply Seqtl_comp; auto with algebra.
+change (Seqtl (head v;; Seqtl v ++ w) =' Seqtl v ++ w in seq (n + m) A)
+ in |- *.
+generalize dependent (Seqtl_cons_inv (head v) (Seqtl v ++ w)).
+auto.
 Qed.
 
-Lemma concat_Seqtl : (v:(seq (S n) A); w:(seq m A))
-  (Seqtl v)++w =' (Seqtl (v++w)).
-Intros.
-Apply Sym.
-Apply Seqtl_concat.
+Lemma concat_Seqtl :
+ forall (v : seq (S n) A) (w : seq m A), Seqtl v ++ w =' Seqtl (v ++ w) in _.
+intros.
+apply Sym.
+apply Seqtl_concat.
 Qed.
 
 End MAIN.
 
-Notation "a ++ b" := (concat a b) (at level 1, no associativity)
-  V8only (at level 45, right associativity).
-Hints Resolve concat_comp : algebra.
-Hints Resolve cons_concat concat_cons : algebra.
-Hints Resolve concat_first_element head_eats_concat: algebra.
-Hints Resolve Seqtl_concat concat_Seqtl : algebra.
-Hints Resolve cons_concat_special : algebra.
+Notation "a ++ b" := (concat a b) (at level 45, right associativity).
+Hint Resolve concat_comp: algebra.
+Hint Resolve cons_concat concat_cons: algebra.
+Hint Resolve concat_first_element head_eats_concat: algebra.
+Hint Resolve Seqtl_concat concat_Seqtl: algebra.
+Hint Resolve cons_concat_special: algebra.
