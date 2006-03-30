@@ -39,8 +39,8 @@ Fact lin_trafo_equation :
  forall T : Map V W,
  lin_trafo_on T ->
  forall (a : F) (x y : V), T (a mX x +' y) =' a mX T x +' T y in _.
-intros.
-destruct X.
+intros T H a x y.
+destruct H.
 apply Trans with (T (a mX x) +' T y); auto with algebra.
 Qed.
 
@@ -77,10 +77,10 @@ Fact lin_trafo_of_lin_comb :
  forall (n : Nat) (a : seq n F) (v : seq n V),
  T (sum (mult_by_scalars a v)) =' sum (mult_by_scalars a (comp_map_map T v))
  in _.
-intros.
+intros T H; intros.
 induction n.
 simpl in |- *.
-apply Trans with (Build_lin_trafo X (zero V)); auto with algebra.
+apply Trans with (Build_lin_trafo H (zero V)); auto with algebra.
 apply Trans with (T (sum (mult_by_scalars (hdtl a) (hdtl v)))).
 apply Ap_comp; auto with algebra.
 apply
@@ -92,7 +92,7 @@ apply
  Trans
   with (T (head a mX head v +' sum (mult_by_scalars (Seqtl a) (Seqtl v))));
  auto with algebra.
-destruct X.
+destruct H.
 apply
  Trans
   with
