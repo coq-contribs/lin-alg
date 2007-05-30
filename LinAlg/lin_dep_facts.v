@@ -328,7 +328,6 @@ exists x0.
 split.
 apply Map_embed_reflects_distinct; auto with algebra.
 apply distinct_comp with (omit (Map_embed x') i); auto with algebra.
-apply (omit_preserves_distinct (v:=Map_embed x')); auto with algebra.
 split.
 red in |- *; red in Ha; intro; apply Ha.
 2: auto.
