@@ -1,4 +1,5 @@
- -I ../../Sophia-Antipolis/Algebra/ -I examples -I extras -I support -I LinAlg 
+-R . LinAlg
+-I ../../Sophia-Antipolis/Algebra/
 
 first_page.v
 
