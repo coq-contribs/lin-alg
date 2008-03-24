@@ -342,8 +342,7 @@ intros.
 assert (included (seq_set (Seqtl aas')) (seq_set (omit Aseq j))).
 
 2: specialize (H6 H7).
-2: intro.
-2: inversion_clear H8.
+2: inversion_clear H6.
 2: destruct x.
 2: exists (Build_finiteT (lt_n_S _ _ in_range_prf)).
 2: apply Trans with (Seqtl aas' (Build_finiteT in_range_prf));
