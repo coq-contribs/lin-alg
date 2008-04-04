@@ -25,9 +25,9 @@
 
 OCAMLLIBS:=
 COQLIBS:= -R . LinAlg\
-  -R ../../Sophia-Antipolis/Algebra/ algebra
+  -R ../../Sophia-Antipolis/Algebra/ Algebra
 COQDOCLIBS:=-R . LinAlg\
-  -R ../../Sophia-Antipolis/Algebra/ algebra
+  -R ../../Sophia-Antipolis/Algebra/ Algebra
 
 ##########################
 #                        #
@@ -149,80 +149,7 @@ GFILES:=$(VFILES:.v=.g)
 HTMLFILES:=$(VFILES:.v=.html)
 GHTMLFILES:=$(VFILES:.v=.g.html)
 
-all: first_page.vo\
-  support/equal_syntax.vo\
-  support/more_syntax.vo\
-  LinAlg/vecspaces_verybasic.vo\
-  support/finite.vo\
-  examples/vecspace_Fn.vo\
-  support/Map2.vo\
-  examples/vecspace_functionspace.vo\
-  examples/Matrices.vo\
-  examples/vecspace_Mmn.vo\
-  LinAlg/alt_build_vecsp.vo\
-  examples/infinite_sequences.vo\
-  support/algebra_omissions.vo\
-  support/arb_intersections.vo\
-  LinAlg/subspaces.vo\
-  examples/antisymmetric_matrices.vo\
-  examples/symmetric_matrices.vo\
-  examples/up_lo_triang_mat.vo\
-  support/seq_set.vo\
-  support/seq_set_seq.vo\
-  support/empty.vo\
-  support/conshdtl.vo\
-  support/concat.vo\
-  support/const.vo\
-  support/omit.vo\
-  support/pointwise.vo\
-  support/modify_seq.vo\
-  support/mult_by_scalars.vo\
-  support/Map_embed.vo\
-  support/subseqs.vo\
-  support/sums.vo\
-  support/sums2.vo\
-  support/distinct.vo\
-  support/cast_seq_lengths.vo\
-  support/seq_equality.vo\
-  support/concat_facts.vo\
-  support/seq_equality_facts.vo\
-  support/distribution_lemmas.vo\
-  support/seq_set_facts.vo\
-  support/omit_facts.vo\
-  support/distinct_facts.vo\
-  support/cast_between_subsets.vo\
-  LinAlg/lin_combinations.vo\
-  LinAlg/spans.vo\
-  LinAlg/algebraic_span_facts.vo\
-  LinAlg/lin_comb_facts.vo\
-  LinAlg/direct_sum.vo\
-  LinAlg/lin_dependence.vo\
-  LinAlg/lin_dep_facts.vo\
-  support/random_facts.vo\
-  support/finite_subsets.vo\
-  support/has_n_elements.vo\
-  support/counting_elements.vo\
-  LinAlg/bases.vo\
-  LinAlg/bases_from_generating_sets.vo\
-  LinAlg/replacement_theorem.vo\
-  LinAlg/replacement_corollaries.vo\
-  LinAlg/bases_finite_dim.vo\
-  LinAlg/maxlinindepsubsets.vo\
-  LinAlg/subspace_dim.vo\
-  LinAlg/subspace_bases.vo\
-  LinAlg/Linear_Algebra_by_Friedberg_Insel_Spence.vo\
-  LinAlg/Lin_trafos.vo\
-  examples/trivial_spaces.vo\
-  examples/Matrix_multiplication.vo\
-  extras/ring_module.vo\
-  extras/Inter_intersection.vo\
-  extras/finite_misc.vo\
-  extras/restrict.vo\
-  extras/Matrix_related_defs.vo\
-  extras/before_after.vo\
-  extras/matrix_algebra.vo\
-  extras/Equality_structures.vo
-
+all: $(VOFILES) 
 spec: $(VIFILES)
 
 gallina: $(GFILES)
@@ -250,8 +177,6 @@ all-gal.ps: $(VFILES)
 ####################
 
 .PHONY: all opt byte archclean clean install depend html
-
-.SUFFIXES: .v .vo .vi .g .html .tex .g.tex .g.html
 
 %.vo %.glob: %.v
 	$(COQC) -dump-glob $*.glob $(COQDEBUG) $(COQFLAGS) $*
