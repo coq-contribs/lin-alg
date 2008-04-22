@@ -12,4 +12,5 @@ Description: A development of some preliminary linear algebra
   based on Chapter 1 of "Linear Algebra" by Friedberg, Insel and Spence
 Keywords: linear algebra
 Version: 7.4
-Require: algebra
+Require: Algebra
+Category: Mathematics/Algebra
