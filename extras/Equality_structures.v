@@ -36,16 +36,16 @@ Variable I : A -> Setoid.
 Definition StrEqType := forall a b : A, I a -> I b -> Prop.
 Record EqStructure : Type := 
   {StrEq :> forall a b : A, I a -> I b -> Prop;
-   StrEqRefl : forall (a : A) (x : I a), StrEq _ _ x x;
+   StrEqRefl : forall (a : A) (x : I a), StrEq x x;
    StrEqSym :
-    forall (a b : A) (x : I a) (y : I b), StrEq _ _ x y -> StrEq _ _ y x;
+    forall (a b : A) (x : I a) (y : I b), StrEq x y -> StrEq y x;
    StrEqTrans :
     forall (a b c : A) (x : I a) (y : I b) (z : I c),
-    StrEq _ _ x y -> StrEq _ _ y z -> StrEq _ _ x z;
-   StrEqRestr : forall (a : A) (x y : I a), StrEq _ _ x y -> x =' y in I a;
-   StrEqExtend : forall (a : A) (x y : I a), x =' y in I a -> StrEq _ _ x y;
+    StrEq x y -> StrEq y z -> StrEq x z;
+   StrEqRestr : forall (a : A) (x y : I a), StrEq x y -> x =' y in I a;
+   StrEqExtend : forall (a : A) (x y : I a), x =' y in I a -> StrEq x y;
    StrEqIndex :
-    forall (a b : A) (x : I a) (y : I b), StrEq _ _ x y -> a =' b in A}.
+    forall (a b : A) (x : I a) (y : I b), StrEq x y -> a =' b in A}.
 End defs.
 
 Definition seq_eq_str (A : Setoid) : EqStructure (fun n : Nat => seq n A).
