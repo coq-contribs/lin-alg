@@ -37,7 +37,7 @@ exact (f (Build_finiteT (lt_O_Sn n0));; X _ (Seqtl f) g).
 (* ie. (concat (f0 :: (Seqtl f) g)) = f0 :: (concat (Seqtl f) g) *)
 Defined.
 
-Notation "a ++ b" := (concat a b) (at level 45, right associativity).
+Infix "++" := concat (at level 60, right associativity).
 
 Lemma concat_comp :
  forall (n m : Nat) (f f' : seq n A) (g g' : seq m A),
@@ -155,7 +155,7 @@ Qed.
 
 End MAIN.
 
-Notation "a ++ b" := (concat a b) (at level 45, right associativity).
+Infix "++" := concat (at level 60, right associativity).
 Hint Resolve concat_comp: algebra.
 Hint Resolve cons_concat concat_cons: algebra.
 Hint Resolve concat_first_element head_eats_concat: algebra.
