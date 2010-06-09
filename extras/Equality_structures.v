@@ -49,7 +49,6 @@ Record EqStructure : Type :=
 End defs.
 
 Definition seq_eq_str (A : Setoid) : EqStructure (fun n : Nat => seq n A).
-intro.
 apply
  (Build_EqStructure (I:=fun n : Nat => seq n A)
     (StrEq:=fun (n m : Nat) (v : seq n A) (w : seq m A) => seq_equal v w));
