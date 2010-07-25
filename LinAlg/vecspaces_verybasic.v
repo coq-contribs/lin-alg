@@ -16,6 +16,7 @@
 
 (** * vecspaces_verybasic.v *)
 Section MAIN.
+Set Automatic Coercions Import.
 Set Implicit Arguments.
 Unset Strict Implicit.
 Require Export Field_facts.

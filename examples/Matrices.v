@@ -16,6 +16,7 @@
 
 (** %\subsection*{ examples :  Matrices.v }%*)
 (** - Some preliminary notions about matrices *)
+Set Automatic Coercions Import.
 Set Implicit Arguments.
 Unset Strict Implicit.
 Require Export Map2.
