@@ -19,6 +19,7 @@
  this is done without using the 'tool' alt_build_vecspace, just to 
  show the tediousness of having to build all successive structures from the
  algebraic hierarchy by hand *)
+Set Automatic Coercions Import.
 Set Implicit Arguments.
 Unset Strict Implicit.
 

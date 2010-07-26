@@ -16,6 +16,7 @@
 
 (** %\subsection*{ examples :  vecspace\_Mmn.v }%*)
 (** - The vectorspace of $n\times m$ matrices over $F$ *)
+Set Automatic Coercions Import.
 Set Implicit Arguments.
 Unset Strict Implicit.
 Require Export Matrices.
