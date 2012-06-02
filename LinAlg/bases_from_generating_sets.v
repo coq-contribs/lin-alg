@@ -79,7 +79,6 @@ exists x4.
 red in |- *.
 simpl in |- *.
 unfold cast_to_subset_fun in |- *.
-unfold Map_rect in |- *.
 destruct x2.
 simpl in |- *.
 auto with algebra.
@@ -118,7 +117,6 @@ exists x4.
 red in |- *.
 simpl in |- *.
 unfold cast_to_subset_fun in |- *.
-unfold Map_rect in |- *.
 destruct x2.
 simpl in |- *.
 auto with algebra.
