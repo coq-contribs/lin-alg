@@ -121,7 +121,7 @@ Qed.
 (** - if $\forall b\in B, f(b)\in W\subset A$ for $f:B\to A$ then $f$ can be seen as
  $f:B\to W$. This is done by cast_map_to_subset. *)
 
-Let cast_to_subset_fun :
+Definition cast_to_subset_fun :
   forall (A B : Setoid) (v : MAP B A) (W : part_set A),
   (forall i : B, in_part (v i) W) -> (B -> W:Type).
 intros A B v.
