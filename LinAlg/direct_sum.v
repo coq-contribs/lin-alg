@@ -15,6 +15,8 @@
 
 
 (** * direct_sum.v *)
+Local Unset Standard Proposition Elimination Names.
+
 Set Implicit Arguments.
 Unset Strict Implicit.
 Require Export algebraic_span_facts.

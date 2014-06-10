@@ -15,6 +15,8 @@
 
 
 (** * subspace_dim.v *)
+Local Unset Standard Proposition Elimination Names.
+
 Set Implicit Arguments.
 Unset Strict Implicit.
 Require Export bases_finite_dim.
