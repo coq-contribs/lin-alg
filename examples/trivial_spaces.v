@@ -84,18 +84,22 @@ apply Build_basis with (empty (trivvecsp a F)).
 red in |- *.
 split.
 red in |- *.
-simpl in |- *.
+cbn - [trivvecsp].
 red in |- *.
-simpl in |- *.
+cbn - [trivvecsp].
+Opaque trivvecsp.
 split; auto; intros _.
+Transparent trivvecsp.
 red in |- *.
 exists 0.
 exists (empty_seq F).
+Transparent trivvecsp.
 exists (empty_seq (empty (single a))).
-simpl in |- *.
+cbn - [trivvecsp].
+unfold trivvecsp in x.
+repeat red in x.
 destruct x.
 red in |- *.
-simpl in |- *.
 simpl in subtype_prf.
 auto.
 apply empty_lin_indep.
