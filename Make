@@ -1,5 +1,4 @@
 -R . LinAlg
--R ../../Sophia-Antipolis/Algebra/ Algebra
 
 first_page.v
 
