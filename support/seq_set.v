@@ -23,7 +23,7 @@
 Set Implicit Arguments.
 Unset Strict Implicit.
 Require Export finite.
-Require Export Parts.
+From Algebra Require Export Parts.
 
 Section MAIN.
 

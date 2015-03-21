@@ -20,8 +20,8 @@ Set Implicit Arguments.
 Unset Strict Implicit.
 Require Export vecspaces_verybasic.
 Require Export arb_intersections.
-Require Export Sub_module.
-Require Export Singleton.
+From Algebra Require Export Sub_module.
+From Algebra Require Export Singleton.
 Require Export algebra_omissions.
 
 Variable F : field.

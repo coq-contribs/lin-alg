@@ -20,10 +20,10 @@
 (* Algebra contribution... nonetheless, for your viewing pleasure: *)
 Set Implicit Arguments.
 Unset Strict Implicit.
-Require Export Ring_facts.
+From Algebra Require Export Ring_facts.
 Require Export equal_syntax.
 Require Export more_syntax.
-Require Export Endo_set.
+From Algebra Require Export Endo_set.
 Section ring_module.
 Variable R : ring.
 

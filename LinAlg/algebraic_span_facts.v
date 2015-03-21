@@ -18,7 +18,7 @@
 Set Implicit Arguments.
 Unset Strict Implicit.
 Require Export spans.
-Require Export Inter.
+From Algebra Require Export Inter.
 
 Section MAIN.
 Variable F : field.

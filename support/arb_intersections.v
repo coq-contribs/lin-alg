@@ -26,7 +26,7 @@
 
 Set Implicit Arguments.
 Unset Strict Implicit.
-Require Export Parts2.
+From Algebra Require Export Parts2.
 Require Export Classical_Pred_Type.
 Section MAIN.
 Section indexed_int.

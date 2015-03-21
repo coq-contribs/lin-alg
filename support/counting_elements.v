@@ -17,10 +17,10 @@
 (** %\subsection*{ support :  counting\_elements.v }%*)
 Set Implicit Arguments.
 Unset Strict Implicit.
-Require Export Diff.
-Require Export Singleton.
+From Algebra Require Export Diff.
+From Algebra Require Export Singleton.
 Require Export has_n_elements.
-Require Export Union.
+From Algebra Require Export Union.
 Require Export const.
 (** - Once we have has_n_elements, it would seem to be easy to define
  has_at_least_n_elements and has_at_most_n_elements. But one has to take a little

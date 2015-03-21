@@ -19,7 +19,7 @@ Set Implicit Arguments.
 Unset Strict Implicit.
 Require Export Map_embed.
 Require Export algebra_omissions.
-Require Export Sub_monoid.
+From Algebra Require Export Sub_monoid.
 Require Export more_syntax.
 
 (** - A sequence of v1...vn of elements in a monoid V is a map (fin n)->V.

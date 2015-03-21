@@ -19,10 +19,10 @@
  an algebra (over $F$) *)
 
 Require Export Matrices. 
-Require Export Algebra.
+From Algebra Require Export Algebra.
 
 Require Export vecspace_Mmn.
-Require Export Cfield_facts.
+From Algebra Require Export Cfield_facts.
 Variable F : cfield.
 Definition Mmn_alg (n : nat) : algebra F.
 intros.

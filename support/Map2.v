@@ -24,7 +24,7 @@
 Set Implicit Arguments.
 Unset Strict Implicit.
 Require Export equal_syntax.
-Require Export Cartesian.
+From Algebra Require Export Cartesian.
 
 (* We have setoid-compatible functions called "Map" *)
 

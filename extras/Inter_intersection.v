@@ -19,7 +19,7 @@ Set Implicit Arguments.
 Unset Strict Implicit. 
 Require Export arb_intersections.
 Require Export conshdtl.
-Require Export Inter.
+From Algebra Require Export Inter.
 
 (** - A nice lemma relating indexed intersections with binary ones.
    Remember that 'indexed_intersection' takes a map from some setoid I to

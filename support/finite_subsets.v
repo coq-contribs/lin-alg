@@ -17,8 +17,8 @@
 (** %\subsection*{ support :  finite\_subsets.v }%*)
 Set Implicit Arguments.
 Unset Strict Implicit.
-Require Export Diff.
-Require Export Singleton.
+From Algebra Require Export Diff.
+From Algebra Require Export Singleton.
 Require Export cast_between_subsets.
 Require Export empty.
 Require Export Classical_Prop.

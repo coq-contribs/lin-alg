@@ -19,10 +19,10 @@ Section MAIN.
 Set Automatic Coercions Import.
 Set Implicit Arguments.
 Unset Strict Implicit.
-Require Export Field_facts.
+From Algebra Require Export Field_facts.
 Require Export equal_syntax.
 Require Export more_syntax.
-Require Export Module_facts.
+From Algebra Require Export Module_facts.
 
 (** - The definition of a vectorspace, and some very easy lemma's.
  This file is basically the book's Section 1.2 *)

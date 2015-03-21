@@ -18,8 +18,8 @@
 Set Implicit Arguments.
 Unset Strict Implicit.
 Require Export concat_facts.
-Require Export Union.
-Require Export Singleton.
+From Algebra Require Export Union.
+From Algebra Require Export Singleton.
 Require Export Classical_Prop.
 
 Section MAIN.

@@ -18,7 +18,7 @@
 Set Implicit Arguments.
 Unset Strict Implicit.
 Require Export finite.
-Require Export Parts.
+From Algebra Require Export Parts.
 
 (** - This file introduces the "cons" operator on sequences (called "conseq" here to
  avoid confusion with the normal notion for Lists). It is denoted as "a;;v" instead

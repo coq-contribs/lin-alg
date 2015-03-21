@@ -18,7 +18,7 @@
 Set Implicit Arguments.
 Unset Strict Implicit.
 Section MAIN.
-Require Export Union.
+From Algebra Require Export Union.
 Require Export subspaces.
 Require Export cast_between_subsets.
 Require Export mult_by_scalars.

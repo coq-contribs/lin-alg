@@ -15,7 +15,7 @@
 
 
 (** %\subsection*{ support :  more\_syntax.v }%*)
-Require Export Module_cat.
+From Algebra Require Export Module_cat.
 
 (**
 In this file we introduce more syntax to make the development

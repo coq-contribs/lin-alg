@@ -18,7 +18,7 @@
 Set Implicit Arguments.
 Unset Strict Implicit.
 Require Export concat.
-Require Export Cartesian.
+From Algebra Require Export Cartesian.
 
 (** - The pointwise operation of a binary operator: suppose $f:A\to B, g:A\to C,
  \circ:B\times C\to D$, then (pointwise $\circ$ f g) = $a\mapsto f(a)\circ g(a): A\to D$.

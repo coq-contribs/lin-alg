@@ -108,7 +108,7 @@ Qed.
 End facts.
 
 Section morefacts.
-Require Export Cfield_facts.
+From Algebra Require Export Cfield_facts.
 Variable F : cfield.
 Variable n m p : Nat.
 Variable M : Mmn F m n.

@@ -17,7 +17,7 @@
 (** %\subsection*{ support :  sums2.v }%*)
 Set Implicit Arguments.
 Unset Strict Implicit.
-Require Export Abelian_group_facts.
+From Algebra Require Export Abelian_group_facts.
 Require Export sums.
 Require Export omit.
 Require Export modify_seq.

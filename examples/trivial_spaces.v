@@ -18,7 +18,7 @@
 Set Implicit Arguments.
 Unset Strict Implicit.
 Require Export bases_finite_dim.
-Require Export Singleton.
+From Algebra Require Export Singleton.
 Require Export alt_build_vecsp.
 (** - Here we will make the trivial vectorspace as an example of vectorspaces. Notice
  this differs from the trivial subspace defined in subspaces.v *)

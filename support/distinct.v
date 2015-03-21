@@ -20,7 +20,7 @@
 Set Implicit Arguments.
 Unset Strict Implicit.
 Require Export finite.
-Require Export Parts.
+From Algebra Require Export Parts.
 
 (** %\label{distinct}% *)
 Definition distinct (A : Setoid) (n : Nat) (v : seq n A) :=

@@ -20,7 +20,7 @@
  also why I do not use the syntactic sugar as defined in equal_syntax.v and 
  more_syntax.v *)
 
-Require Export Group_facts.
+From Algebra Require Export Group_facts.
 Set Implicit Arguments.
 Unset Strict Implicit.
 
