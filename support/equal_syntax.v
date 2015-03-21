@@ -19,7 +19,7 @@
 We separate this from the rest of the algebra syntax since many
 definitions only require setoids and nothing more.
 %\label{equalsyntax}% *)
-Require Export Sets.
+From Algebra Require Export Sets.
 
 Notation "a =' b 'in' c" := (Equal (s:=c) a b) (at level 70, b at next level).
 
