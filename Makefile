@@ -50,9 +50,9 @@ vo_to_obj = $(addsuffix .o,\
 #                        #
 ##########################
 
-COQLIBS?=-Q "../algebra" Algebra\
+COQLIBS?=\
   -R "." LinAlg
-COQDOCLIBS?=-Q "../algebra" Algebra\
+COQDOCLIBS?=\
   -R "." LinAlg
 
 ##########################
@@ -255,17 +255,17 @@ install:
 	done
 
 install-doc:
-	install -d "$(DSTROOT)"$(COQDOCINSTALL)/$(INSTALLDEFAULTROOT)/html
+	install -d "$(DSTROOT)"$(COQDOCINSTALL)/LinAlg/html
 	for i in html/*; do \
-	 install -m 0644 $$i "$(DSTROOT)"$(COQDOCINSTALL)/$(INSTALLDEFAULTROOT)/$$i;\
+	 install -m 0644 $$i "$(DSTROOT)"$(COQDOCINSTALL)/LinAlg/$$i;\
 	done
 
 uninstall_me.sh: Makefile
 	echo '#!/bin/sh' > $@ 
 	printf 'cd "$${DSTROOT}"$(COQLIBINSTALL)/LinAlg && rm -f $(VOFILES) $(VFILES) $(GLOBFILES) $(NATIVEFILES) $(CMOFILES) $(CMIFILES) $(CMAFILES) && find . -type d -and -empty -delete\ncd "$${DSTROOT}"$(COQLIBINSTALL) && find "LinAlg" -maxdepth 0 -and -empty -exec rmdir -p \{\} \;\n' >> "$@"
-	printf 'cd "$${DSTROOT}"$(COQDOCINSTALL)/$(INSTALLDEFAULTROOT) \\\n' >> "$@"
+	printf 'cd "$${DSTROOT}"$(COQDOCINSTALL)/LinAlg \\\n' >> "$@"
 	printf '&& rm -f $(shell find "html" -maxdepth 1 -and -type f -print)\n' >> "$@"
-	printf 'cd "$${DSTROOT}"$(COQDOCINSTALL) && find $(INSTALLDEFAULTROOT)/html -maxdepth 0 -and -empty -exec rmdir -p \{\} \;\n' >> "$@"
+	printf 'cd "$${DSTROOT}"$(COQDOCINSTALL) && find LinAlg/html -maxdepth 0 -and -empty -exec rmdir -p \{\} \;\n' >> "$@"
 	chmod +x $@
 
 uninstall: uninstall_me.sh
