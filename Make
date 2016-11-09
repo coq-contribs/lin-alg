@@ -1,4 +1,4 @@
--R . LinAlg -R algebra Algebra
+-R . LinAlg
 
 first_page.v
 
