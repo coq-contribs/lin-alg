@@ -4,9 +4,7 @@ The Linear Algebra distribution by Jasper Stein (jasper@cs.kun.nl) extending the
 (required) [algebra distribution by Loic Pottier][loic], and following Chapter 1
 of "Linear Algebra" by Friedberg, Insel and Spence.
 
-To install after unpacking this distribution, run the script install.sh.
-
-Alternatively, this project is hosted on the [Coq Package Index][package-index],
+This project is hosted on the [Coq Package Index][package-index],
 and can be installed with [OPAM][opam],
 following [Guillaume Claret's blog post][claret], or
 the [official instructions][instructions].
