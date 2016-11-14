@@ -91,9 +91,9 @@ Defined.
 Lemma fin_equation :
  forall (n i j : nat) (Hi : i < n) (Hj : j < n),
  i = j -> Build_finiteT Hi =' Build_finiteT Hj in fin n.
-  intros.
-  simpl in |- *.
-  auto.
+intros.
+simpl in |- *.
+auto.
 Qed.
 
 (* This formalisation is heavily dependent on Loic Pottier's algebra contribution *)
@@ -104,53 +104,53 @@ Hint Resolve fin_equation: algebra.
 
 Lemma fin_decidable :
  forall (n : Nat) (i i' : fin n), i =' i' in _ \/ ~ i =' i' in _.
-  intros.
-  simpl in |- *.
-  cut (forall k l : nat, k = l \/ k <> l).
-  intro.
-  auto.
-  clear i' i n.
-  double induction k l.
-  left; auto.
-  intros; right.
-  unfold not in |- *.
-  intro.
-  inversion H0.
-  intros; right.
-  unfold not in |- *.
-  intro.
-  inversion H0.
-  intros.
-  elim (H0 n).
-  auto.
-  auto.
+intros.
+simpl in |- *.
+cut (forall k l : nat, k = l \/ k <> l).
+intro.
+auto.
+clear i' i n.
+double induction k l.
+left; auto.
+intros; right.
+unfold not in |- *.
+intro.
+inversion H0.
+intros; right.
+unfold not in |- *.
+intro.
+inversion H0.
+intros.
+elim (H0 n).
+auto.
+auto.
 Qed.
 
 
 Lemma fin_O_nonexistent : fin 0 -> False.
-  destruct 1.
-  inversion_clear in_range_prf0.
+destruct 1.
+inversion_clear in_range_prf0.
 Qed.
 
 Hint Resolve fin_O_nonexistent: algebra.
 
 Lemma fin_S_O_unique : forall i j : fin 1, i =' j in _.
-  intro.
-  case i.
-  intro x.
-  case x.
-  intros l j.
-  case j.
-  intro x0.
-  case x0.
-  simpl in |- *.
-  auto.
-  intros.
-  inversion in_range_prf0.
-  inversion H0.
-  intros.
-  inversion in_range_prf0.
-  inversion H0.
+intro.
+case i.
+intro x.
+case x.
+intros l j.
+case j.
+intro x0.
+case x0.
+simpl in |- *.
+auto.
+intros.
+inversion in_range_prf0.
+inversion H0.
+intros.
+inversion in_range_prf0.
+inversion H0.
 Qed.
 
 Hint Resolve fin_S_O_unique: algebra.
@@ -163,13 +163,13 @@ Definition seq (n : Nat) (A : Setoid) := MAP (fin n) A.
 Lemma toSeq :
  forall (A : Setoid) (n : Nat) (v v' : Map (fin n) A),
  v =' v' in seq _ _ -> v =' v' in MAP _ _.
-  auto.
+auto.
 Qed.
 
 Lemma toMap :
  forall (A : Setoid) (n : Nat) (v v' : Map (fin n) A),
  v =' v' in MAP _ _ -> v =' v' in seq _ _.
-  auto.
+auto.
 Qed.
 
 Hint Resolve toSeq toMap: algebra.
