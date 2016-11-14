@@ -20,7 +20,6 @@ Unset Strict Implicit.
 Require Export Arith.
 Require Export equal_syntax.
 
-
 (** - The setoid of natural numbers - not really necessary but it's nice to have a
  uniform approach *)
 
@@ -54,32 +53,39 @@ Record finiteT (N : Nat) : Type :=  {index : nat; in_range_prf : index < N}.
 
 
 Definition fin : Nat -> Setoid.
-intro N.
-apply
- (Build_Setoid (Carrier:=finiteT N)
-    (Equal:=fun n m : finiteT N => index n = index m)).
-red in |- *.
-split.
-red in |- *.
-intro.
-red in |- *.
-reflexivity.
-red in |- *.
-split.
-red in |- *.
-intros.
-red in H.
-red in H0.
-red in |- *.
-transitivity (index y).
-assumption.
-assumption.
-red in |- *.
-intros.
-red in H.
-red in |- *.
-symmetry  in |- *.
-assumption.
+  intro N.
+  apply
+  (Build_Setoid (Carrier:=finiteT N)
+      (Equal:=fun n m : finiteT N => index n = index m)).
+  (* Now, we prove that our relation is an equivalence *)
+  red in |- *.
+  split.
+  { (* Reflexivity *)
+    red in |- *.
+    intro.
+    red in |- *.
+    reflexivity.
+  }
+  { (* Partial equivalence *)
+    red in |- *.
+    split.
+    { (* Transitivity *)
+      red in |- *.
+      intros.
+      red in H.
+      red in H0.
+      red in |- *.
+      transitivity (index y); assumption.
+    }
+    { (* Symmetry *)
+      red in |- *.
+      intros.
+      red in H.
+      red in |- *.
+      symmetry  in |- *.
+      assumption.
+    }
+  }
 Defined.
 
 Lemma fin_equation :
