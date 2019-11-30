@@ -21,9 +21,11 @@
 Require Export Matrices. 
 From Algebra Require Export Algebra.
 
+Set Nested Proofs Allowed.
+
 Require Export vecspace_Mmn.
 From Algebra Require Export Cfield_facts.
-Variable F : cfield.
+Local Axiom F : cfield.
 Definition Mmn_alg (n : nat) : algebra F.
 intros.
 apply Build_algebra with (Mmn F n n).
